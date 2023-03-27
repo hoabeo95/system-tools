@@ -1,0 +1,75 @@
+---
+########################## Check_list for all CentOS - Fedora hosts ##########################
+- name: Setup OS
+  hosts: all
+  gather_facts: yes
+  become: yes
+  serial: 1
+  tasks:
+
+    - name: Set IPtables
+      shell: |
+        standard=`echo -e "Active:\ active"`; check=`systemctl status iptables | grep "$standard"`; if [[ -z $check ]]; then `yum install iptables && systemctl stop firewalld && systemctl disable firewalld && systemctl enable iptables && systemctl start iptables`;fi 
+      
+        # - name: Check Allowers Users
+        #   shell: |
+        #     list=`cat /etc/passwd |grep sh$  | grep -v ^# | grep -v nfsnobody | awk -F: '($3>=400) {print $1}'`; check=`sudo cat /etc/ssh/sshd_config | grep -v ^# | grep -w AllowUsers`; result=`for user in $list; do if [[ $check == *$user* ]]; then echo "OK"; else echo "WARNING";fi ;done`; if [[ $result == *WARNING* ]]; then echo "WARNING"; else echo "OK";fi;
+        #   register: check_allow_users
+        #   ignore_errors: True
+
+        # - name: check list user
+        #   shell: |
+        #     check=`cat /etc/passwd | grep sh$ | awk -F: '{print $1}' | grep -Ev "^root|^user1"`; if [[ -z $check  ]]; then echo "OK";else echo "WARNING"; fi;
+        #   register: check_list_user
+        #   ignore_errors: True
+
+        # - name: Checklist application using root
+        #   shell: check=`ps -ef | grep ^root | grep "java\|tomcat\|jre\|jdk" | grep -v grep`; if [ -z $check ];then echo "OK";else echo "WARNING"; fi;
+        #   register: app_using_root
+
+    - name: Set Timezone
+      shell: check=`date +"%Z %z" | grep -w 0700`; if [[ $check != *0700* ]]; then `timedatectl set-timezone Asia/Ho_Chi_Minh`; fi
+
+        # - name: checklist SSh Protocol2 configured
+        #   shell: check=`sudo cat /etc/ssh/sshd_config | grep -v ^# | grep -w "Protocol 2"`; if [ -z $check ]; then echo "WARNING"; else echo "OK";fi;
+        #   register: ssh_protocol2
+
+        # - name: check config password
+        #   shell: standard="minlen=8 ucredit=-1 lcredit=-1 dcredit=-1 ocredit=-1 remember=8 sha512"; check=`cat /etc/pam.d/common-password | grep ^password*`; result=`for patern in $standard;do if [[ $check == *$patern* ]];then echo "OK"; else echo "NULL";fi;done`; if [[ $result == *NULL* ]]; then echo "WARNING"; else echo "OK";fi
+        #   register: check_conf_pass
+        #   ignore_errors: True
+
+        # - name: check TMOUT
+        #   shell: check=`cat /etc/profile | grep -v ^# | grep -E "TMOUT=300|readonly TMOUT|export TMOUT"`; if [[ -z $check ]]; then echo "WARNING"; else echo "OK";fi;
+        #   register: tmout_check
+
+        # - name: check PermitRootLogin
+        #   shell: check=`cat /etc/ssh/sshd_config | grep -v ^# | grep -w "PermitRootLogin no"`; if [[ -z $check ]]; then echo "WARNING"; else echo "OK";fi; echo "";
+        #   register: permit_root_login
+
+    - name: check nf_conntrack_max
+      shell: standard="/proc/sys/net/nf_conntrack_max"; check=`cat $standard`; if [[ -z $check ]]; then echo "WARNING"; elif [ $check -lt 524288 ]; then `echo "524288" > /proc/sys/net/nf_conntrack_max`;fi; 
+      register: check_conntrack_max
+
+        # - name: checklist group
+        #   shell: standard=`echo -e "%wheel\tALL=(ALL)\tALL"`; check=`sudo cat /etc/sudoers | grep -v ^# | grep "$standard"`; if [ -z $check ]; then echo "OK"; else echo "WARNING";fi; echo "";
+        #   register: checklist_group
+
+    - name: check nf_contrack_ipv4
+      shell: standard="/sys/module/nf_conntrack_ipv4/parameters/hashsize"; check=`cat $standard`; if [[ -z $check ]]; then echo "WARNING"; elif [ $check -lt 131072 ]; then `sudo echo "131072" > /sys/module/nf_conntrack_ipv4/parameters/hashsize`;fi;
+      register: check_conntrack_ip
+
+        # - name: check crontab service
+        #   shell: check_deny=`ls /etc/ | grep cron.deny`; check_allow=`ls /etc/ | grep cron.allow`;if [[ $check_allow && -z $check_deny ]]; then echo "OK"; else echo "WARNING";fi; echo "";
+        #   register: check_crontab
+
+        # - name: Check time 90 days to change pass
+        #   shell: check=`cat /etc/login.defs | grep 'PASS_MAX_DAYS 90'`; [[ -z $check ]] && echo "WARNING" || echo "OK";
+        #   register: check_90day_change_pass
+        #   ignore_errors: true
+
+        # - name: check crontab maximum config
+        #   shell: check1=`crontab -l | grep -v ^# | grep -v "sd_agent" | grep -v "scms-agent"`; check2=`crontab -l | grep -v ^# | grep sd_agent | grep sd_agent_monitor.sh`; check3=`crontab -l | grep -v ^# | grep scms-agent | grep scms-mon`; if [[ -z $check2 ]]; then echo "WARNING"; elif [[ -z $check3 ]]; then echo "WARNING"; elif [[ ! -z $check1 ]]; then echo "WARNING"; else echo "OK"; fi
+        #   register: check_crontab_max_conf
+        #   ignore_errors:
+        #     true

@@ -1,0 +1,122 @@
+---
+########################## Check_list for all ubuntu - debbian hosts ##########################
+- name: Checklist OS
+  hosts: all
+  gather_facts: yes
+  become: yes
+  serial: 1
+  tasks:
+    - name: Switch to bin/bash
+      shell: ln -sf /bin/bash /bin/sh
+
+    - name: Check system OS
+      shell: . /etc/os-release; echo "$NAME"
+      register: sys_os
+      ignore_errors: true
+
+    - name: check kernel 5
+      shell: check=`uname -r | grep ^5.`; if [ -z $check ]; then echo "WARNING";else echo "OK"; fi; echo "";
+      register: check_kernel_newest
+      ignore_errors: true
+
+    - name: check no necessary package
+      shell: check=`dpkg --get-selections | grep deinstall`; if [ -z $check ]; then echo "OK";else echo "WARNING"; fi; echo "";
+      register: not_necessary_package
+      ignore_errors: true
+
+    - name: check list user
+      shell: |
+        check=`cat /etc/passwd | grep sh$ | awk -F: '{print $1}' | grep -Ev "^root|^user1"`; if [[ -z $check  ]]; then echo "OK";else echo "WARNING"; fi; echo "";
+      register: check_list_user
+      ignore_errors: True
+
+    - name: Check Allowers Users
+      shell: |
+        list=`cat /etc/passwd |grep sh$  | grep -v ^# | grep -v nfsnobody | awk -F: '($3>=400) {print $1}'`; check=`sudo cat /etc/ssh/sshd_config | grep -v ^# | grep -w AllowUsers`; result=`for user in $list; do if [[ $check == *$user* ]]; then echo "OK"; else echo "WARNING";fi ;done`; if [[ $result == *WARNING* ]]; then echo "WARNING"; else echo "OK";fi;
+      register: check_allow_users
+      ignore_errors: True
+
+    - name: Check IPtables
+      shell: standard=`echo -e "Active:\ active"`; check=`systemctl status iptables | grep "$standard"`; if [[ -z $check ]]; then echo "WARNING"; else echo "OK";fi; echo "";
+      register: iptables
+      ignore_errors: true
+
+    - name: Checklist application using root
+      shell: check=`ps -ef | grep ^root | grep "java\|tomcat\|jre\|jdk" | grep -v grep`; if [ -z $check ];then echo "OK";else echo "WARNING"; fi; echo "";
+      register: app_using_root
+
+    - name: Checklist Timezone
+      shell: check=`date +"%Z %z" | grep -w 0700`; if [[ $check == *0700* ]]; then echo "OK";else echo "WARNING"; fi; echo "";
+      register: timezone
+
+    - name: checklist SSh Protocol2 configured
+      shell: check=`sudo cat /etc/ssh/sshd_config | grep -v ^# | grep -w "Protocol 2"`; if [ -z $check ]; then echo "WARNING"; else echo "OK";fi; echo "";
+      register: ssh_protocol2
+
+    - name: check config password
+      shell: standard="minlen=8 ucredit=-1 lcredit=-1 dcredit=-1 ocredit=-1"; check=`cat /etc/pam.d/common-password | grep ^password.*requisite.*pam_cracklib\.so`; result=`for patern in $standard;do if [[ $check == *$patern* ]];then echo "OK"; else echo "NULL";fi;done`; if [[ $result == *NULL* ]]; then echo "WARNING"; else echo "OK";fi
+      register: check_conf_pass
+      ignore_errors: True
+
+    - name: check config password sha512
+      shell: |
+        dir1="/etc/pam.d/common-password"; \
+        dir2="/etc/login.defs"; \
+        dir3="/etc/libuser.conf" \
+        check1=`cat $dir1 | grep ^# | grep -w 'sha512' | grep -w 'shadow' | grep 'remember=5'`; \
+        check2=`cat $dir2 | grep -E 'MD5_CRYPT_ENAB no|ENCRYPT_METHOD SHA512'`; \
+        check3=`cat $dir3 | grep -E 'crypt_style = sha512'`; \
+        [[ ! -r $dir1 || ! -r $dir2 || ! -r $dir3 ]] && (echo 'WARNING') || ([[ ! -z $check1 && ! -z $check2 && ! -z $check3 ]] && (echo 'OK') || (echo 'WARNING'))
+      register: check_conf_pass_sha
+      ignore_errors: True
+
+    - name: check TMOUT
+      shell: check=`cat /etc/profile | grep -v ^# | grep -E -o "TMOUT=300|readonly TMOUT|export TMOUT"`; if [[ -z $check ]]; then echo "WARNING"; else echo "OK";fi; echo "";
+      register: tmout_check
+
+    - name: check PermitRootLogin
+      shell: check=`cat /etc/ssh/sshd_config | grep -v ^# | grep -w "PermitRootLogin no"`; if [[ -z $check ]]; then echo "WARNING"; else echo "OK";fi; echo "";
+      register: permit_root_login
+
+    - name: check nf_conntrack_max
+      shell: file="/proc/sys/net/nf_conntrack_max"; check=`cat $file`; [[ ! -f $file ]] && echo "WARNING" || ([[ $check -lt 524288 ]] && echo "WARNING" || echo "OK")
+      register: check_conntrack_max
+
+    - name: checklist group
+      shell: standard=`echo -e "%sudo\tALL=(ALL:ALL) ALL"`; check=`sudo cat /etc/sudoers | grep -v ^# | grep "$standard"`; if [ -z $check ]; then echo "OK"; else echo "WARNING";fi; echo "";
+      register: checklist_group
+
+    - name: check nf_contrack_ipv4
+      shell: file="/sys/module/nf_conntrack/parameters/hashsize"; check=`cat $file`; if [[ ! -f $file ]]; then echo "WARNING"; elif [ $check -lt 131072 ]; then echo "WARNING"; else echo "OK";fi; echo "";
+      register: check_conntrack_ip
+    
+    - name: check crontab service
+      shell: check_deny=`ls /etc/ | grep cron.deny`; check_allow=`ls /etc/ | grep cron.allow`; [[ ! -z $check_allow && -z $check_deny ]] && (echo "OK") || (echo "WARNING")
+      register: check_crontab
+
+    - name: check crontab maximum config
+      shell: check1=`crontab -l | grep -v ^# | grep -v "sd_agent" | grep -v "scms-agent"`; check2=`crontab -l | grep -v ^# | grep sd_agent | grep sd_agent_monitor.sh`; check3=`crontab -l | grep -v ^# | grep scms-agent | grep scms-mon`; if [[ -z $check2 ]]; then echo "WARNING"; elif [[ -z $check3 ]]; then echo "WARNING"; elif [[ ! -z $check1 ]]; then echo "WARNING"; else echo "OK"; fi
+      register: check_crontab_max_conf
+      ignore_errors: true
+
+    - name: Check time 90 days to change pass
+      shell: check=`cat /etc/login.defs | grep 'PASS_MAX_DAYS 90'`; [[ -z $check ]] && echo "WARNING" || echo "OK";
+      register: check_90day_change_pass
+      ignore_errors: true
+
+        ########################## Save_result ##########################
+- name: Save result
+  hosts: all
+  tasks:
+    - copy:
+        content: |
+          HOST;OS;CHECK_KERNEL_NEWEST;NOT_NECESSARY_PACKAGE;CHECK_LISTS_USER;IPTABLES;APP_USING_ROOT;TIMEZONE;SSH_PROTOCOL2;CHECK_CONF_PASSWORD;CHECK_CONF_PASSWORD_SHA512;90_DAYS_CHANGE_PASS;CHECK_TMOUT;PERMIT_ROOT_LOGIN;CHECK_ALLOW_USERS;GROUP_SUDO_WHEEL;CHECK_NF_CONNTRACK;CHECK_IP_CONNTRACK;CHECK_CRONTAB;CHECK_CRONTAB_MAX_CONF
+          {% for host in hostvars %}
+          {%    set vars = hostvars[host|string] %}
+          {{ vars.inventory_hostname }};{{ vars.sys_os.stdout }};{{ vars.check_kernel_newest.stdout }};{{ vars.not_necessary_package.stdout }};{{ vars.check_list_user.stdout }};{{ vars.iptables.stdout }};{{ vars.app_using_root.stdout }};{{ vars.timezone.stdout }};{{ vars.ssh_protocol2.stdout }};{{ vars.check_conf_pass.stdout }};{{ vars.check_conf_pass_sha.stdout }};{{ vars.check_90day_change_pass.stdout }};{{ vars.tmout_check.stdout }};{{ vars.permit_root_login.stdout }};{{ vars.check_allow_users.stdout }};{{ vars.checklist_group.stdout }};{{ vars.check_conntrack_max.stdout }};{{ vars.check_conntrack_ip.stdout }};{{ vars.check_crontab.stdout }};{{ vars.check_crontab_max_conf.stdout }}
+          {% endfor %}
+        dest:
+          ../../output_ubuntu_family.csv
+          #  backup: yes
+      run_once: yes
+      delegate_to: localhost

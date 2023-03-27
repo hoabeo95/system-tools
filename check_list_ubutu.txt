@@ -1,0 +1,44 @@
+// Check list kernel 5 | OK
+check=`uname -r | grep ^5.`; if [ -z $check ]; then echo "WARNING";else echo "OK"; fi; echo ""
+
+// Check list cac goi tin khong can thiet | OK
+check=`dpkg --get-selections | grep deinstall`; if [ -z $check ]; then echo "OK";else echo "WARNING"; fi; echo ""
+
+// Check list goi tin can thiet: n/a
+
+// check list co user khac ngoai vt_admin, root | OK
+check=`cat /etc/passwd | grep sh$ | awk -F: '{print $1}' | grep -Ev "^root|^vt_admin"`; if [[ -z $check  ]]; then echo "OK";else echo "WARNING"; fi; echo ""
+
+
+// Check list cau hinh password | OK
+standard=`echo "minnlen=8|ucredit=-1|lcredit=-1|dcredit=-1|ocredit=-1|remember=2|sha512"`;check=`cat /etc/pam.d/common-password | grep -E "$standard"`; if [[ -z $check  ]]; then echo "WARNING";else echo "OK"; fi; echo ""
+
+//Check list thoi han doi mat khau va ma sha512
+standard=`echo -e "PASS_MAX_DAYS\t90|MD5_CRYPT_ENAB\ no|ENCRYPT_METHOD\ SHA512"`;check=`cat /etc/login.defs | grep -E "$standard"`; if [[ -z $check  ]]; then echo "WARNING";else echo "OK"; fi; echo ""
+
+// Check list protocol 2 | OK
+check=`sudo cat /etc/ssh/sshd_config | grep -v ^# | grep -w "Protocol 2"`; if [ -z $check ]; then echo "WARNING"; else echo "OK";fi; echo "";
+
+// Check list IPTABLES | OK
+standard=`echo -e "Active:\ active"`; check=`systemctl status iptables | grep "$standard"`; if [[ -z $check ]]; then echo "WARNING"; else echo "OK";fi; echo "";
+
+// Check list time zone | OK
+check=`date +"%Z %z" | grep -w 0700`; if [[ $check == *0700* ]]; then echo "OK";else echo "WARNING"; fi; echo "";
+
+//Check PermitRootLogin | OK
+check=`cat /etc/ssh/sshd_config | grep -v ^# | grep -w "PermitRootLogin no"`; if [[ -z $check ]]; then echo "WARNING"; else echo ""OK";fi; echo "";
+
+//Check AllowUsers | OK
+list=`cat /etc/passwd |grep sh$  | grep -v ^# | grep -v nfsnobody | awk -F: '($3>=400) {print $1}'`; check=`sudo cat /etc/ssh/sshd_config | grep -v ^# | grep -w AllowUsers`; result=`for user in $list; do if [[ $check == *$user* ]]; then echo "OK"; else echo "WARNING";fi ;done`; if [[ $result == *WARNING* ]]; then echo "WARNING"; else echo "OK";fi
+
+//Check setup TMOUT | OK
+check=`cat /etc/profile | grep -v ^# | grep -E "TMOUT=300|readonly TMOUT|export TMOUT"`; if [[ -z $check ]]; then echo "WARNING"; else echo "OK";fi; echo "";
+
+//Check crontab | OK
+check_deny=`ls /etc/ | grep cron.deny`; check_allow=`ls /etc/ | grep cron.allow`;if [[ $check_allow && -z $check_deny ]]; then echo "OK"; else echo "WARNING";fi; echo "";
+
+
+
+
+
+
