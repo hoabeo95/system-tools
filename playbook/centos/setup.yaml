@@ -76,5 +76,5 @@
         #     true
     - name: check network manager disable
       shell: |
-        check=`systemctl status NetworkManager | grep "Active: active"`; [[ ! -z $check ]] && systemctl stop NetworkManager && systemctl disable NetworkManager
+        check=`systemctl status NetworkManager | grep "Active: active"`; [[ ! -z $check ]] && systemctl stop NetworkManager && systemctl disable NetworkManager || echo ""
 
