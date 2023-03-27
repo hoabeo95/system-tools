@@ -35,7 +35,7 @@
       shell: check=`date +"%Z %z" | grep -w 0700`; if [[ $check != *0700* ]]; then `timedatectl set-timezone Asia/Ho_Chi_Minh`; fi ;
 
     - name: checklist SSh Protocol2 configured
-      shell: check=`sudo cat /etc/ssh/sshd_config | grep -v ^# | grep -w "Protocol 2"`; if [ -z $check ]; then echo "WARNING"; else echo "OK";fi; echo "";
+      shell: check=`sudo cat /etc/ssh/sshd_config | grep -v ^# | grep -w "Protocol 2"`; if [ -z $check ]; then echo "WARNING"; else echo "OK";fi; 
 
         # - name: check config password
         #   shell: standard="minlen=8 ucredit=-1 lcredit=-1 dcredit=-1 ocredit=-1"; check=`cat /etc/pam.d/common-password | grep ^password.*requisite.*pam_cracklib\.so`; result=`for patern in $standard;do if [[ $check == *$patern* ]];then echo "OK"; else echo "NULL";fi;done`; if [[ $result == *NULL* ]]; then echo "WARNING"; else echo "OK";fi
@@ -81,7 +81,6 @@
         #   register: check_crontab_max_conf
         #   ignore_errors: true
 
-        # - name: Check time 90 days to change pass
-        #   shell: check=`cat /etc/login.defs | grep 'PASS_MAX_DAYS 90'`; [[ -z $check ]] && echo "WARNING" || echo "OK";
-        #   register: check_90day_change_pass
-        #   ignore_errors: true
+    - name: Set 90 days to change pass
+      shell: check=`cat /etc/login.defs | grep 'PASS_MAX_DAYS 90'`; [[ -z $check ]] && echo -e "PASS_MAX_DAYS 90" >> /etc/login.defs || echo "";
+      ignore_errors: true

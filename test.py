@@ -119,7 +119,7 @@ def generate_result(list_OS, list_ssh_fail):
    if list_ssh_fail != []:
       df_fail = pd.Series(list_ssh_fail)
       df_fail.to_excel(writer,sheet_name="IP_SSH_FAIL", header=False, index=False)
-   
+
    writer.close()
 
 if __name__ == '__main__':
