@@ -1,0 +1,13 @@
+# remote
+git remote set-url origin https://hoabeo95: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@github.com/hoabeo95/system-tools.git
+
+# Create local branch
+git branch <name_branch>
+
+# Create remote branch
+git push -u origin <branch_name>
+
+# Git update
+git add .
+git commit -m "string"
+git push origin <branch_name>
