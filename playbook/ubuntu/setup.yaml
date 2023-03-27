@@ -64,18 +64,21 @@
     - name: check PermitRootLogin
       shell: check=`cat /etc/ssh/sshd_config | grep -v ^# | grep -w "PermitRootLogin no"`; if [[ -z $check ]]; then echo "PermitRootLogin no" >> /etc/ssh/sshd_config; fi;
 
-        # - name: check nf_conntrack_max
-        #   shell: file="/proc/sys/net/nf_conntrack_max"; check=`cat $file`; [[ ! -f $file ]] && echo "WARNING" || ([[ $check -lt 524288 ]] && echo "WARNING" || echo "OK")
-        #   register: check_conntrack_max
+    - name: set nf_conntrack_max
+      shell: 
+        line='echo "524288" > /proc/sys/net/netfilter/nf_conntrack_max';file="/proc/sys/net/nf_conntrack_max"; check=`cat $file`; [[ ! -f $file ]] && echo "WARNING" || ([[ $check -lt 524288 ]] && echo "524288" > /proc/sys/net/netfilter/nf_conntrack_max && sed -i "/exit 0/ i\$line" /etc/rc.local || echo "")
+      ignore_errors: true
+
+    - name: set nf_conntrack_buckets
+      shell: 
+        line='echo "131072" > /proc/sys/net/netfilter/nf_conntrack_buckets';file="/proc/sys/net/netfilter/nf_conntrack_buckets"; check=`cat $file`; [[ ! -f $file ]] && echo "WARNING" || ([[ $check -lt 131072 ]] && echo "131072" > /proc/sys/net/netfilter/nf_conntrack_max && sed -i "/exit 0/ i\$line" /etc/rc.local || echo "")
+      ignore_errors: true
+
 
         # - name: checklist group
         #   shell: standard=`echo -e "%sudo\tALL=(ALL:ALL) ALL"`; check=`sudo cat /etc/sudoers | grep -v ^# | grep "$standard"`; if [ -z $check ]; then echo "OK"; else echo "WARNING";fi; echo "";
         #   register: checklist_group
 
-        # - name: check nf_contrack_ipv4
-        #   shell: file="/sys/module/nf_conntrack/parameters/hashsize"; check=`cat $file`; if [[ ! -f $file ]]; then echo "WARNING"; elif [ $check -lt 131072 ]; then echo "WARNING"; else echo "OK";fi; echo "";
-        #   register: check_conntrack_ip
-        # 
         # - name: check crontab service
         #   shell: check_deny=`ls /etc/ | grep cron.deny`; check_allow=`ls /etc/ | grep cron.allow`; [[ ! -z $check_allow && -z $check_deny ]] && (echo "OK") || (echo "WARNING")
         #   register: check_crontab
@@ -87,4 +90,9 @@
 
     - name: Set 90 days to change pass
       shell: check=`cat /etc/login.defs | grep 'PASS_MAX_DAYS 90'`; [[ -z $check ]] && echo -e "PASS_MAX_DAYS 90" >> /etc/login.defs || echo "";
+      ignore_errors: true
+
+    - name: check rc-local
+      shell: |
+        check=`systemctl status rc-local | grep -w "Active: active"`; [[ -z $check ]] && touch /etc/rc.local && echo -e '#!/bin/sh\nexit 0' > /etc/rc.local && systemctl enable rc-local && systemctl start rc-local || echo "";
       ignore_errors: true

@@ -91,8 +91,8 @@
       shell: standard=`echo -e "%sudo\tALL=(ALL:ALL) ALL"`; check=`sudo cat /etc/sudoers | grep -v ^# | grep "$standard"`; if [ -z $check ]; then echo "OK"; else echo "WARNING";fi; echo "";
       register: checklist_group
 
-    - name: check nf_contrack_ipv4
-      shell: file="/sys/module/nf_conntrack/parameters/hashsize"; check=`cat $file`; if [[ ! -f $file ]]; then echo "WARNING"; elif [ $check -lt 131072 ]; then echo "WARNING"; else echo "OK";fi; echo "";
+    - name: check nf_contrack_buckets
+      shell: file="/proc/sys/net/netfilter/nf_conntrack_buckets"; check=`cat $file`; if [[ ! -f $file ]]; then echo "WARNING"; elif [ $check -lt 131072 ]; then echo "WARNING"; else echo "OK";fi; echo "";
       register: check_conntrack_ip
     
     - name: check crontab service
@@ -109,16 +109,22 @@
       register: check_90day_change_pass
       ignore_errors: true
 
+    - name: check rc-local
+      shell: |
+        check=`systemctl status rc-local | grep -w "Active: active"`; [[ -z $check ]] && echo "WARNING" || echo "OK";
+      register: rc_local_check
+      ignore_errors: true
+
         ########################## Save_result ##########################
 - name: Save result
   hosts: all
   tasks:
     - copy:
         content: |
-          HOST;OS;CHECK_KERNEL_NEWEST;NOT_NECESSARY_PACKAGE;CHECK_LISTS_USER;IPTABLES;NETFILTER;APP_USING_ROOT;TIMEZONE;SSH_PROTOCOL2;CHECK_CONF_PASSWORD;CHECK_CONF_PASSWORD_SHA512;90_DAYS_CHANGE_PASS;CHECK_TMOUT;PERMIT_ROOT_LOGIN;CHECK_ALLOW_USERS;GROUP_SUDO_WHEEL;CHECK_NF_CONNTRACK;CHECK_IP_CONNTRACK;CHECK_CRONTAB;CHECK_CRONTAB_MAX_CONF
+          HOST;OS;CHECK_KERNEL_NEWEST;NOT_NECESSARY_PACKAGE;CHECK_LISTS_USER;IPTABLES;NETFILTER;APP_USING_ROOT;TIMEZONE;SSH_PROTOCOL2;CHECK_CONF_PASSWORD;CHECK_CONF_PASSWORD_SHA512;90_DAYS_CHANGE_PASS;CHECK_TMOUT;PERMIT_ROOT_LOGIN;CHECK_ALLOW_USERS;GROUP_SUDO_WHEEL;CHECK_NF_CONNTRACK;CHECK_IP_CONNTRACK;CHECK_CRONTAB;CHECK_CRONTAB_MAX_CONF;RC_LOCAL_CHECK
           {% for host in hostvars %}
           {%    set vars = hostvars[host|string] %}
-          {{ vars.inventory_hostname }};{{ vars.sys_os.stdout }};{{ vars.check_kernel_newest.stdout }};{{ vars.not_necessary_package.stdout }};{{ vars.check_list_user.stdout }};{{ vars.iptables.stdout }};{{ vars.netfilter_check.stdout }};{{ vars.app_using_root.stdout }};{{ vars.timezone.stdout }};{{ vars.ssh_protocol2.stdout }};{{ vars.check_conf_pass.stdout }};{{ vars.check_conf_pass_sha.stdout }};{{ vars.check_90day_change_pass.stdout }};{{ vars.tmout_check.stdout }};{{ vars.permit_root_login.stdout }};{{ vars.check_allow_users.stdout }};{{ vars.checklist_group.stdout }};{{ vars.check_conntrack_max.stdout }};{{ vars.check_conntrack_ip.stdout }};{{ vars.check_crontab.stdout }};{{ vars.check_crontab_max_conf.stdout }}
+          {{ vars.inventory_hostname }};{{ vars.sys_os.stdout }};{{ vars.check_kernel_newest.stdout }};{{ vars.not_necessary_package.stdout }};{{ vars.check_list_user.stdout }};{{ vars.iptables.stdout }};{{ vars.netfilter_check.stdout }};{{ vars.app_using_root.stdout }};{{ vars.timezone.stdout }};{{ vars.ssh_protocol2.stdout }};{{ vars.check_conf_pass.stdout }};{{ vars.check_conf_pass_sha.stdout }};{{ vars.check_90day_change_pass.stdout }};{{ vars.tmout_check.stdout }};{{ vars.permit_root_login.stdout }};{{ vars.check_allow_users.stdout }};{{ vars.checklist_group.stdout }};{{ vars.check_conntrack_max.stdout }};{{ vars.check_conntrack_ip.stdout }};{{ vars.check_crontab.stdout }};{{ vars.check_crontab_max_conf.stdout }};{{ vars.rc_local_check.stdout }}
           {% endfor %}
         dest:
           ../../output_ubuntu_family.csv
