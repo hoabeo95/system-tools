@@ -25,8 +25,11 @@
         #   ignore_errors: True
 
     - name: Check IPtables
-      shell: standard=`echo -e "Active:\ active"`; check=`systemctl status iptables | grep "$standard"`; [[ -z $check ]] && apt install iptables iptables-persistent netfilter-persistent && systemctl start netfilter-persistent && systemctl enable iptables && systemctl start iptables || echo "";
+      shell: check=`dpkg -l | grep "iptables-persistent"`; [[ -z $check ]] && apt install iptables iptables-persistent || echo "";
 
+    - name: Check netfilter-persistent
+      shell: standard=`echo -e "Active:\ active"`; check=`systemctl status iptables | grep "$standard"`; [[ -z $check ]] && apt install netfilter-persistent && systemctl enable netfilter-persistent && systemctl restart netfilter-persistent || echo "";        
+        
         # - name: Checklist application using root
         #   shell: check=`ps -ef | grep ^root | grep "java\|tomcat\|jre\|jdk" | grep -v grep`; if [ -z $check ];then echo "OK";else echo "WARNING"; fi; echo "";
         #   register: app_using_root
