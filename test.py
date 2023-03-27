@@ -22,7 +22,7 @@ def create_inventory():
 # Application
    for row in range(0, df_input.shape[0]):
 # Variable
-      host_ip = df_input.loc[row,'IP']
+      host_ip = df_input.loc[row,'ip']
       username = df_input.loc[row,'user']
       password = df_input.loc[row,'pass']
 # SSH connect
