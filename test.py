@@ -13,7 +13,8 @@ CURRENT_DIR = os.getcwd()
 
 def create_inventory():
 # Read Workbook
-   df_input = pd.read_csv('input.csv',delimiter='|',index_col=False)
+   df_input = pd.read_csv('input.csv',delimiter=',',index_col=False)
+   print(df_input)
    ip_count = 0
    list_ssh_fail = []
    list_OS = []
