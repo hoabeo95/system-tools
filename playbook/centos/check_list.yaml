@@ -66,7 +66,8 @@
       register: check_conntrack_ip
 
     - name: check crontab service
-      shell: check_deny=`ls /etc/ | grep cron.deny`; check_allow=`ls /etc/ | grep cron.allow`;if [[ $check_allow && -z $check_deny ]]; then echo "OK"; else echo "WARNING";fi; echo "";
+      shell: |
+        check_status=`systemctl status crond | grep "Active: active"`;check_deny=`ls /etc/ | grep cron.deny`; check_allow=`ls /etc/ | grep cron.allow`;if [[ ! -z $check_status && ! -z $check_allow && -z $check_deny ]]; then echo "OK"; else echo "WARNING";fi; echo "";
       register: check_crontab
 
     - name: Check time 90 days to change pass
@@ -80,16 +81,21 @@
       ignore_errors:
         true
 
+    - name: check network manager disable
+      shell: |
+        check=`systemctl status NetworkManager | grep "Active: active"`; [[ -z $check ]] && echo "OK" || echo "WARNING";
+      register: check_network_manager
+      ignore_errors: true
         ########################## Save_result ##########################
 - name: Save result
   hosts: all
   tasks:
     - copy:
         content: |
-          HOST;OS;CHECK_LISTS_USER;IPTABLES;APP_USING_ROOT;TIMEZONE;SSH_PROTOCOL2;CHECK_CONF_PASSWORD;90_DAYS_CHANGE_PASS;CHECK_TMOUT;PERMIT_ROOT_LOGIN;CHECK_ALLOW_USERS;GROUP_SUDO_WHEEL;CHECK_NF_CONNTRACK;CHECK_IP_CONNTRACK;CHECK_CRONTAB;CHECK_CRONTAB_MAX_CONF
+          HOST;OS;CHECK_LISTS_USER;IPTABLES;APP_USING_ROOT;TIMEZONE;SSH_PROTOCOL2;CHECK_CONF_PASSWORD;90_DAYS_CHANGE_PASS;CHECK_TMOUT;PERMIT_ROOT_LOGIN;CHECK_ALLOW_USERS;GROUP_SUDO_WHEEL;CHECK_NF_CONNTRACK;CHECK_IP_CONNTRACK;CHECK_CRONTAB;CHECK_CRONTAB_MAX_CONF;CHECK_NETWORK_MANAGER
           {% for host in hostvars %}
           {%    set vars = hostvars[host|string] %}
-          {{ vars.inventory_hostname }};{{ vars.sys_os.stdout }};{{ vars.check_list_user.stdout }};{{ vars.iptables.stdout }};{{ vars.app_using_root.stdout }};{{ vars.timezone.stdout }};{{ vars.ssh_protocol2.stdout }};{{ vars.check_conf_pass.stdout }};{{ check_90day_change_pass.stdout }};{{ vars.tmout_check.stdout }};{{ vars.permit_root_login.stdout }};{{ vars.check_allow_users.stdout }};{{ vars.checklist_group.stdout }};{{ vars.check_conntrack_max.stdout }};{{ vars.check_conntrack_ip.stdout }};{{ vars.check_crontab.stdout }};{{ vars.check_crontab_max_conf.stdout }}
+          {{ vars.inventory_hostname }};{{ vars.sys_os.stdout }};{{ vars.check_list_user.stdout }};{{ vars.iptables.stdout }};{{ vars.app_using_root.stdout }};{{ vars.timezone.stdout }};{{ vars.ssh_protocol2.stdout }};{{ vars.check_conf_pass.stdout }};{{ check_90day_change_pass.stdout }};{{ vars.tmout_check.stdout }};{{ vars.permit_root_login.stdout }};{{ vars.check_allow_users.stdout }};{{ vars.checklist_group.stdout }};{{ vars.check_conntrack_max.stdout }};{{ vars.check_conntrack_ip.stdout }};{{ vars.check_crontab.stdout }};{{ vars.check_crontab_max_conf.stdout }};{{ vars.check_network_manager.stdout }}
           {% endfor %}
         dest:
           ../../output_centos_family.csv

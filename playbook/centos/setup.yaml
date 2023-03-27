@@ -47,7 +47,7 @@
         #   shell: check=`cat /etc/ssh/sshd_config | grep -v ^# | grep -w "PermitRootLogin no"`; if [[ -z $check ]]; then echo "WARNING"; else echo "OK";fi; echo "";
         #   register: permit_root_login
 
-    - name: check nf_conntrack_max
+    - name: Set nf_conntrack_max
       shell: standard="/proc/sys/net/nf_conntrack_max"; check=`cat $standard`; if [[ -z $check ]]; then echo "WARNING"; elif [ $check -lt 524288 ]; then `echo "524288" > /proc/sys/net/nf_conntrack_max`;fi; 
       register: check_conntrack_max
 
@@ -55,13 +55,14 @@
         #   shell: standard=`echo -e "%wheel\tALL=(ALL)\tALL"`; check=`sudo cat /etc/sudoers | grep -v ^# | grep "$standard"`; if [ -z $check ]; then echo "OK"; else echo "WARNING";fi; echo "";
         #   register: checklist_group
 
-    - name: check nf_contrack_ipv4
+    - name: Set nf_contrack_ipv4
       shell: standard="/sys/module/nf_conntrack_ipv4/parameters/hashsize"; check=`cat $standard`; if [[ -z $check ]]; then echo "WARNING"; elif [ $check -lt 131072 ]; then `sudo echo "131072" > /sys/module/nf_conntrack_ipv4/parameters/hashsize`;fi;
       register: check_conntrack_ip
 
-        # - name: check crontab service
-        #   shell: check_deny=`ls /etc/ | grep cron.deny`; check_allow=`ls /etc/ | grep cron.allow`;if [[ $check_allow && -z $check_deny ]]; then echo "OK"; else echo "WARNING";fi; echo "";
-        #   register: check_crontab
+    - name: Set crontab service
+      shell: |
+        check_status=`systemctl status crond | grep "Active: active"`;check_deny=`ls /etc/ | grep cron.deny`; check_allow=`ls /etc/ | grep cron.allow`;if [[ -z $check_status ]]; then `yum install cronie && systemctl enable crond && systemctl start crond && rm /etc/cron.deny && touch /etc/cron.allow`;fi;
+
 
         # - name: Check time 90 days to change pass
         #   shell: check=`cat /etc/login.defs | grep 'PASS_MAX_DAYS 90'`; [[ -z $check ]] && echo "WARNING" || echo "OK";
@@ -73,3 +74,7 @@
         #   register: check_crontab_max_conf
         #   ignore_errors:
         #     true
+    - name: check network manager disable
+      shell: |
+        check=`systemctl status NetworkManager | grep "Active: active"`; [[ ! -z $check ]] && systemctl stop NetworkManager && systemctl disable NetworkManager
+
