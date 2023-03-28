@@ -10,7 +10,8 @@
       shell: ln -sf /bin/bash /bin/sh
 
     - name: check no necessary package
-      shell: check=`dpkg --get-selections | grep deinstall | cut -f1`; [[ ! -z $check ]] && dpkg --purge $check || echo "";
+      shell:
+        check=`dpkg --get-selections | grep deinstall | cut -f1`; [[ ! -z $check ]] && dpkg --purge $check || echo "";
 
         # - name: check list user
         #   shell: |
@@ -28,8 +29,9 @@
       shell: check=`dpkg -l | grep "iptables-persistent"`; [[ -z $check ]] && apt install iptables iptables-persistent || echo "";
 
     - name: Check netfilter-persistent
-      shell: standard=`echo -e "Active:\ active"`; check=`systemctl status iptables | grep "$standard"`; [[ -z $check ]] && apt install netfilter-persistent && systemctl enable netfilter-persistent && systemctl restart netfilter-persistent || echo "";        
-        
+      shell:
+        standard=`echo -e "Active:\ active"`; check=`systemctl status iptables | grep "$standard"`; [[ -z $check ]] && apt install netfilter-persistent && systemctl enable netfilter-persistent && systemctl restart netfilter-persistent || echo "";
+
         # - name: Checklist application using root
         #   shell: check=`ps -ef | grep ^root | grep "java\|tomcat\|jre\|jdk" | grep -v grep`; if [ -z $check ];then echo "OK";else echo "WARNING"; fi; echo "";
         #   register: app_using_root
@@ -38,8 +40,9 @@
       shell: check=`date +"%Z %z" | grep -w 0700`; if [[ $check != *0700* ]]; then `timedatectl set-timezone Asia/Ho_Chi_Minh`; fi ;
 
     - name: checklist SSh Protocol2 configured
-      shell: check=`sudo cat /etc/ssh/sshd_config | grep -v ^# | grep -w "Protocol 2"`; if [ -z $check ]; then echo -e "Protocol 2" >> /etc/ssh/ssh_config;fi;
-      ignore_errors: True
+      shell: check=`cat /etc/ssh/sshd_config | grep -v ^# | grep -w "Protocol 2"`; if [ -z $check ]; then echo -e "Protocol 2" >> /etc/ssh/ssh_config;fi;
+      ignore_errors:
+        True
 
         # - name: check config password
         #   shell: standard="minlen=8 ucredit=-1 lcredit=-1 dcredit=-1 ocredit=-1"; check=`cat /etc/pam.d/common-password | grep ^password.*requisite.*pam_cracklib\.so`; result=`for patern in $standard;do if [[ $check == *$patern* ]];then echo "OK"; else echo "NULL";fi;done`; if [[ $result == *NULL* ]]; then echo "WARNING"; else echo "OK";fi
@@ -65,15 +68,14 @@
       shell: check=`cat /etc/ssh/sshd_config | grep -v ^# | grep -w "PermitRootLogin no"`; if [[ -z $check ]]; then echo "PermitRootLogin no" >> /etc/ssh/sshd_config; fi;
 
     - name: set nf_conntrack_max
-      shell: 
-        line='echo "524288" > /proc/sys/net/netfilter/nf_conntrack_max';file="/proc/sys/net/nf_conntrack_max"; check=`cat $file`; [[ ! -f $file ]] && echo "WARNING" || ([[ $check -lt 524288 ]] && echo "524288" > /proc/sys/net/netfilter/nf_conntrack_max && sed -i "/exit 0/ i\$line" /etc/rc.local || echo "")
+      shell: |
+        line='echo "524288" > /proc/sys/net/netfilter/nf_conntrack_max';file="/proc/sys/net/nf_conntrack_max"; check=`cat $file`; [[ ! -f $file ]] && echo "WARNING" || ([[ $check -lt 524288 ]] && echo "524288" > /proc/sys/net/netfilter/nf_conntrack_max && sed -i "/exit 0/iecho 524288 > /proc/sys/net/netfilter/nf_conntrack_max" /etc/rc.local || echo "")
       ignore_errors: true
 
     - name: set nf_conntrack_buckets
-      shell: 
-        line='echo "131072" > /proc/sys/net/netfilter/nf_conntrack_buckets';file="/proc/sys/net/netfilter/nf_conntrack_buckets"; check=`cat $file`; [[ ! -f $file ]] && echo "WARNING" || ([[ $check -lt 131072 ]] && echo "131072" > /proc/sys/net/netfilter/nf_conntrack_max && sed -i "/exit 0/ i\$line" /etc/rc.local || echo "")
-      ignore_errors: true
-
+      shell: file="/proc/sys/net/netfilter/nf_conntrack_buckets"; check=`cat $file`; [[ ! -f $file ]] && echo "WARNING" || ([[ $check -lt 131072 ]] && echo "131072" > /proc/sys/net/netfilter/nf_conntrack_buckets && sed -i "/exit 0/iecho 131072 > /proc/sys/net/netfilter/nf_conntrack_buckets" /etc/rc.local || echo "")
+      ignore_errors:
+        true
 
         # - name: checklist group
         #   shell: standard=`echo -e "%sudo\tALL=(ALL:ALL) ALL"`; check=`sudo cat /etc/sudoers | grep -v ^# | grep "$standard"`; if [ -z $check ]; then echo "OK"; else echo "WARNING";fi; echo "";
