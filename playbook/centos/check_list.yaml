@@ -78,24 +78,43 @@
     - name: check crontab maximum config
       shell: check1=`crontab -l | grep -v ^# | grep -v "sd_agent" | grep -v "scms-agent"`; check2=`crontab -l | grep -v ^# | grep sd_agent | grep sd_agent_monitor.sh`; check3=`crontab -l | grep -v ^# | grep scms-agent | grep scms-mon`; if [[ -z $check2 ]]; then echo "WARNING"; elif [[ -z $check3 ]]; then echo "WARNING"; elif [[ ! -z $check1 ]]; then echo "WARNING"; else echo "OK"; fi
       register: check_crontab_max_conf
-      ignore_errors:
-        true
+      ignore_errors: true
 
     - name: check network manager disable
       shell: |
         check=`systemctl status NetworkManager | grep "Active: active"`; [[ -z $check ]] && echo "OK" || echo "WARNING";
       register: check_network_manager
       ignore_errors: true
+
+    - name: check bluetooth
+      shell: |
+        check=`systemctl status bluetooth | grep "Active: active"`; [[ -z $check ]] && echo "OK" || echo "WARNING"
+      register: check_bluetooth
+      ignore_errors: true
+
+    - name: check cups
+      shell: |
+        check=`systemctl status cupsd | grep "Active: active"`; [[ -z $check ]] && echo "OK" || echo "WARNING"
+      register: check_cups
+      ignore_errors: true
+
+    - name: check kdump
+      shell: |
+        check=`systemctl status kdump | grep "Active: active"`; [[ -z $check ]] && echo "OK" || echo "WARNING"
+      register: check_kdump
+      ignore_errors:
+        true
+
         ########################## Save_result ##########################
 - name: Save result
   hosts: all
   tasks:
     - copy:
         content: |
-          HOST;OS;CHECK_LISTS_USER;IPTABLES;APP_USING_ROOT;TIMEZONE;SSH_PROTOCOL2;CHECK_CONF_PASSWORD;90_DAYS_CHANGE_PASS;CHECK_TMOUT;PERMIT_ROOT_LOGIN;CHECK_ALLOW_USERS;GROUP_SUDO_WHEEL;CHECK_NF_CONNTRACK;CHECK_IP_CONNTRACK;CHECK_CRONTAB;CHECK_CRONTAB_MAX_CONF;CHECK_NETWORK_MANAGER
+          HOST;OS;CHECK_LISTS_USER;IPTABLES;APP_USING_ROOT;TIMEZONE;SSH_PROTOCOL2;CHECK_CONF_PASSWORD;90_DAYS_CHANGE_PASS;CHECK_TMOUT;PERMIT_ROOT_LOGIN;CHECK_ALLOW_USERS;GROUP_SUDO_WHEEL;CHECK_NF_CONNTRACK;CHECK_IP_CONNTRACK;CHECK_CRONTAB;CHECK_CRONTAB_MAX_CONF;CHECK_NETWORK_MANAGER;BLUETOOTH;CUPS;CHECK_KDUMP
           {% for host in hostvars %}
           {%    set vars = hostvars[host|string] %}
-          {{ vars.inventory_hostname }};{{ vars.sys_os.stdout }};{{ vars.check_list_user.stdout }};{{ vars.iptables.stdout }};{{ vars.app_using_root.stdout }};{{ vars.timezone.stdout }};{{ vars.ssh_protocol2.stdout }};{{ vars.check_conf_pass.stdout }};{{ check_90day_change_pass.stdout }};{{ vars.tmout_check.stdout }};{{ vars.permit_root_login.stdout }};{{ vars.check_allow_users.stdout }};{{ vars.checklist_group.stdout }};{{ vars.check_conntrack_max.stdout }};{{ vars.check_conntrack_ip.stdout }};{{ vars.check_crontab.stdout }};{{ vars.check_crontab_max_conf.stdout }};{{ vars.check_network_manager.stdout }}
+          {{ vars.inventory_hostname }};{{ vars.sys_os.stdout }};{{ vars.check_list_user.stdout }};{{ vars.iptables.stdout }};{{ vars.app_using_root.stdout }};{{ vars.timezone.stdout }};{{ vars.ssh_protocol2.stdout }};{{ vars.check_conf_pass.stdout }};{{ check_90day_change_pass.stdout }};{{ vars.tmout_check.stdout }};{{ vars.permit_root_login.stdout }};{{ vars.check_allow_users.stdout }};{{ vars.checklist_group.stdout }};{{ vars.check_conntrack_max.stdout }};{{ vars.check_conntrack_ip.stdout }};{{ vars.check_crontab.stdout }};{{ vars.check_crontab_max_conf.stdout }};{{ vars.check_network_manager.stdout }};{{ vars.check_bluetooth.stdout }};{{ vars.check_cups.stdout }};{{ vars.check_kdump.stdout }}
           {% endfor %}
         dest:
           ../../output_centos_family.csv

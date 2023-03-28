@@ -39,6 +39,10 @@
     - name: Set timezone
       shell: check=`date +"%Z %z" | grep -w 0700`; if [[ $check != *0700* ]]; then `timedatectl set-timezone Asia/Ho_Chi_Minh`; fi ;
 
+    - name: Set bluetooth
+      shell: |
+        check=`systemctl status bluetooth | grep "Active: active"`; [[ ! -z $check ]] && systemctl stop bluetooth && systemctl disable bluetooth || echo ""
+      ignore_errors: true
     - name: checklist SSh Protocol2 configured
       shell: check=`cat /etc/ssh/sshd_config | grep -v ^# | grep -w "Protocol 2"`; if [ -z $check ]; then echo -e "Protocol 2" >> /etc/ssh/ssh_config;fi;
       ignore_errors:
@@ -97,4 +101,19 @@
     - name: check rc-local
       shell: |
         check=`systemctl status rc-local | grep -w "Active: active"`; [[ -z $check ]] && touch /etc/rc.local && echo -e '#!/bin/sh\nexit 0' > /etc/rc.local && chmod +x /etc/rc.local && systemctl enable rc-local && systemctl start rc-local || echo "";
+      ignore_errors: true
+
+    - name: Set bluetooth
+      shell: |
+        check=`systemctl status bluetooth | grep "Active: active"`; [[ ! -z $check ]] && systemctl stop bluetooth && systemctl disable bluetooth || echo ""
+      ignore_errors: true
+
+    - name: check cups
+      shell: |
+        check=`systemctl status cups | grep "Active: active"`; [[ ! -z $check ]] && systemctl stop cups && systemctl disable cups|| echo ""
+      ignore_errors: true
+
+    - name: check kdump
+      shell:
+        check=`systemctl status kdump-tools | grep "Active: active"`; [[ ! -z $check ]] && apt install linux-crashdump && systemctl enable kdump-tools && systemctl start kdump-tools || echo ""
       ignore_errors: true

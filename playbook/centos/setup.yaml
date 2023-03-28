@@ -71,6 +71,21 @@
         #   register: check_crontab_max_conf
         #   ignore_errors:
         #     true
-    - name: check network manager disable
+    - name: Set network manager disable
       shell: |
         check=`systemctl status NetworkManager | grep "Active: active"`; [[ ! -z $check ]] && systemctl stop NetworkManager && systemctl disable NetworkManager || echo ""
+
+    - name: Set bluetooth
+      shell: |
+        check=`systemctl status bluetooth | grep "Active: active"`; [[ ! -z $check ]] && systemctl stop bluetooth && systemctl disable bluetooth || echo ""
+      ignore_errors: true
+
+    - name: check cups
+      shell: |
+        check=`systemctl status cupsd | grep "Active: active"`; [[ ! -z $check ]] && systemctl stop cupsd && systemctl disable cupsd|| echo ""
+      ignore_errors: true
+
+    - name: check kdump
+      shell: |
+        check=`systemctl status kdump | grep "Active: active"`; [[ ! -z $check ]] && sed -i 's/crashkernel=auto/crashkernel=128M/g' /etc/default/grub && grub2-mkconfig -o /boot/grub2/grub.cfg && systemctl restart kdump || echo ""
+      ignore_errors: true

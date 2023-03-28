@@ -28,3 +28,16 @@ Giải pháp sử dụng rc-local.services sẽ tự động triển khai các c
 Khởi động dịch vụ rc-local
 > systemctl enable rc-local && systemctl start rc-local
 
+[kdump]
+Mặc định không được cài đặt sẵn như trong CentOS
+> apt install linux-crashdump
+nếu như centos không được cài đặt sẵn 
+> yum install kexec-tools
+Cách kích hoạt và tên gọi trong ubuntu cũng sẽ khác
+> systemctl enable kdump-tools
+> systemctl start kdump-tools
+ISSUES thường gặp: No memory reserved to start kdump trên Centos
+Solved:
+> sed -i 's/crashkernel=auto/crashkernel=128M/g' /etc/default/grub
+> grub2-mkconfig -o /boot/grub2/grub.cfg
+> systemctl restart kdump
