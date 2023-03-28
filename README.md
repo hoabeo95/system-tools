@@ -1,6 +1,7 @@
 # system-tools
 
 [iptables]
+
 iptables trong ubuntu không được cài đặt sẵn 
 apt install iptables
 tuy nhiên trong hệ điều hành ubuntu, iptables sẽ tự động reset và deactive môi khi reboot lại
@@ -15,6 +16,7 @@ lúc này chúng ta cần active 1 package được cài đặt mặc định s�
 như vậy mỗi lần reboot package này sẽ lấy thông só đã được lưu của iptables và áp dụng.
 
 [nf_contrack]
+
 Mặc định không được cài đặt sẵn trong ubuntu
 ssh> apt install conntrack
 conntrack chỉ được kích hoạt auto sau khi reboot nếu có thông số này được cấu hình trong iptables
@@ -29,6 +31,7 @@ Khởi động dịch vụ rc-local
 > systemctl enable rc-local && systemctl start rc-local
 
 [kdump]
+
 Mặc định không được cài đặt sẵn như trong CentOS
 > apt install linux-crashdump
 nếu như centos không được cài đặt sẵn 
@@ -43,5 +46,6 @@ Solved:
 > systemctl restart kdump
 
 [sendmail|postfix|SELinux]
+
 Các phần mềm này đều không được cài đặt sẵn khi setup Ubuntu
 SELinux được cài đặt mặc định trên CentOS
