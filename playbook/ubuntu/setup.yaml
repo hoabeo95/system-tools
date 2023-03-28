@@ -10,8 +10,10 @@
       shell: ln -sf /bin/bash /bin/sh
 
     - name: check no necessary package
+      shell: check=`dpkg --get-selections | grep deinstall | cut -f1`; [[ ! -z $check ]] && dpkg --purge $check || echo "";
+    - name: update and upgrade
       shell:
-        check=`dpkg --get-selections | grep deinstall | cut -f1`; [[ ! -z $check ]] && dpkg --purge $check || echo "";
+        apt update && apt upgrade
 
         # - name: check list user
         #   shell: |
@@ -85,9 +87,11 @@
         #   shell: standard=`echo -e "%sudo\tALL=(ALL:ALL) ALL"`; check=`sudo cat /etc/sudoers | grep -v ^# | grep "$standard"`; if [ -z $check ]; then echo "OK"; else echo "WARNING";fi; echo "";
         #   register: checklist_group
 
-        # - name: check crontab service
-        #   shell: check_deny=`ls /etc/ | grep cron.deny`; check_allow=`ls /etc/ | grep cron.allow`; [[ ! -z $check_allow && -z $check_deny ]] && (echo "OK") || (echo "WARNING")
-        #   register: check_crontab
+    - name: Set crontab service
+      shell: |
+        check_status=`systemctl status cron | grep "Active: active"`;check_deny=`ls /etc/ | grep cron.deny`; check_allow=`ls /etc/ | grep cron.allow`; [[ -z $check_status || ! -z $check_deny ]] && yum install cron && systemctl enable cron && systemctl start cron && rm -f /etc/cron.deny && ( [[ -z $check_allow ]] && touch /etc/cron.allow) || echo "";
+      ignore_errors:
+        True
 
         # - name: check crontab maximum config
         #   shell: check1=`crontab -l | grep -v ^# | grep -v "sd_agent" | grep -v "scms-agent"`; check2=`crontab -l | grep -v ^# | grep sd_agent | grep sd_agent_monitor.sh`; check3=`crontab -l | grep -v ^# | grep scms-agent | grep scms-mon`; if [[ -z $check2 ]]; then echo "WARNING"; elif [[ -z $check3 ]]; then echo "WARNING"; elif [[ ! -z $check1 ]]; then echo "WARNING"; else echo "OK"; fi

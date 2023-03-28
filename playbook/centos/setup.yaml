@@ -59,7 +59,7 @@
 
     - name: Set crontab service
       shell: |
-        check_status=`systemctl status crond | grep "Active: active"`;check_deny=`ls /etc/ | grep cron.deny`; check_allow=`ls /etc/ | grep cron.allow`; [[ -z $check_status || ! -z check_deny || -z check_allow ]] && yum install cronie && systemctl enable crond && systemctl start crond || echo "";
+        check_status=`systemctl status crond | grep "Active: active"`;check_deny=`ls /etc/ | grep cron.deny`; check_allow=`ls /etc/ | grep cron.allow`; [[ -z $check_status || ! -z $check_deny ]] && yum install cronie && systemctl enable crond && systemctl start crond && rm -f /etc/cron.deny && ( [[ -z $check_allow ]] && touch /etc/cron.allow) || echo "";
 
     - name: Set 90 days to change pass
       shell: check=`cat /etc/login.defs | grep 'PASS_MAX_DAYS 90'`; [[ -z $check ]] && echo -e "PASS_MAX_DAYS 90" >> /etc/login.defs || echo "";
