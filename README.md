@@ -41,3 +41,7 @@ Solved:
 > sed -i 's/crashkernel=auto/crashkernel=128M/g' /etc/default/grub
 > grub2-mkconfig -o /boot/grub2/grub.cfg
 > systemctl restart kdump
+
+[sendmail|postfix|SELinux]
+Các phần mềm này đều không được cài đặt sẵn khi setup Ubuntu
+SELinux được cài đặt mặc định trên CentOS

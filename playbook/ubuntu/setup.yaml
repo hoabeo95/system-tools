@@ -28,10 +28,10 @@
         #   register: check_allow_users
         #   ignore_errors: True
 
-    - name: Check IPtables
+    - name: Set IPtables
       shell: check=`dpkg -l | grep "iptables-persistent"`; [[ -z $check ]] && apt install iptables iptables-persistent || echo "";
 
-    - name: Check netfilter-persistent
+    - name: Set netfilter-persistent
       shell:
         standard=`echo -e "Active:\ active"`; check=`systemctl status iptables | grep "$standard"`; [[ -z $check ]] && apt install netfilter-persistent && systemctl enable netfilter-persistent && systemctl restart netfilter-persistent || echo "";
 
@@ -113,12 +113,22 @@
         check=`systemctl status bluetooth | grep "Active: active"`; [[ ! -z $check ]] && systemctl stop bluetooth && systemctl disable bluetooth || echo ""
       ignore_errors: true
 
-    - name: check cups
+    - name: Set cups
       shell: |
         check=`systemctl status cups | grep "Active: active"`; [[ ! -z $check ]] && systemctl stop cups && systemctl disable cups|| echo ""
       ignore_errors: true
 
-    - name: check kdump
+    - name: Set kdump
       shell: |
         check=`systemctl status kdump-tools | grep "Active: active"`; [[ -z $check ]] && apt install linux-crashdump && systemctl enable kdump-tools && systemctl start kdump-tools || echo ""
+      ignore_errors: true
+
+    - name: Set sendmail
+      shell: |
+        check=`systemctl status sendmail | grep "Active: active"`; [[ ! -z $check ]] && systemctl stop sendmail && systemctl disable sendmail || echo ""
+      ignore_errors: true
+
+    - name: Set postfix
+      shell: |
+        check=`systemctl status postfix | grep "Active: active"`; [[ ! -z $check ]] && systemctl stop postfix && systemctl disable postfix || echo ""
       ignore_errors: true

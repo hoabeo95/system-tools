@@ -29,7 +29,7 @@
     - name: Set Timezone
       shell: check=`date +"%Z %z" | grep -w 0700`; if [[ $check != *0700* ]]; then `timedatectl set-timezone Asia/Ho_Chi_Minh`; fi
 
-    - name: checklist SSh Protocol2 configured
+    - name: Set SSh Protocol2
       shell:
         check=`sudo cat /etc/ssh/sshd_config | grep -v ^# | grep -w "Protocol 2"`; if [ -z $check ]; then echo -e "Protocol 2" >> /etc/ssh/sshd_config;fi;
 
@@ -80,12 +80,22 @@
         check=`systemctl status bluetooth | grep "Active: active"`; [[ ! -z $check ]] && systemctl stop bluetooth && systemctl disable bluetooth || echo ""
       ignore_errors: true
 
-    - name: check cups
+    - name: Set cups
       shell: |
         check=`systemctl status cupsd | grep "Active: active"`; [[ ! -z $check ]] && systemctl stop cupsd && systemctl disable cupsd|| echo ""
       ignore_errors: true
 
-    - name: check kdump
+    - name: Set kdump
       shell: |
         check=`systemctl status kdump | grep "Active: active"`; [[ -z $check ]] && sed -i 's/crashkernel=auto/crashkernel=128M/g' /etc/default/grub && grub2-mkconfig -o /boot/grub2/grub.cfg && systemctl restart kdump || echo ""
+      ignore_errors: true
+
+    - name: Set sendmail
+      shell: |
+        check=`systemctl status sendmail | grep "Active: active"`; [[ ! -z $check ]] && systemctl stop sendmail && systemctl disable sendmail || echo ""
+      ignore_errors: true
+
+    - name: Set postfix
+      shell: |
+        check=`systemctl status postfix | grep "Active: active"`; [[ ! -z $check ]] && systemctl stop postfix && systemctl disable postfix || echo ""
       ignore_errors: true
