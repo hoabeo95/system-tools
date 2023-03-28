@@ -10,10 +10,11 @@
       shell: ln -sf /bin/bash /bin/sh
 
     - name: check no necessary package
-      shell: check=`dpkg --get-selections | grep deinstall | cut -f1`; [[ ! -z $check ]] && dpkg --purge $check || echo "";
-    - name: update and upgrade
       shell:
-        apt update && apt upgrade
+        check=`dpkg --get-selections | grep deinstall | cut -f1`; [[ ! -z $check ]] && dpkg --purge $check || echo "";
+        # - name: update and upgrade
+        #   shell:
+        #     apt update && apt upgrade
 
         # - name: check list user
         #   shell: |
@@ -89,7 +90,7 @@
 
     - name: Set crontab service
       shell: |
-        check_status=`systemctl status cron | grep "Active: active"`;check_deny=`ls /etc/ | grep cron.deny`; check_allow=`ls /etc/ | grep cron.allow`; [[ -z $check_status || ! -z $check_deny ]] && yum install cron && systemctl enable cron && systemctl start cron && rm -f /etc/cron.deny && ( [[ -z $check_allow ]] && touch /etc/cron.allow) || echo "";
+        check_status=`systemctl status cron | grep "Active: active"`;check_deny=`ls /etc/ | grep cron.deny`; check_allow=`ls /etc/ | grep cron.allow`; [[ -z $check_status || ! -z $check_deny ]] && apt install cron && systemctl enable cron && systemctl start cron && rm -f /etc/cron.deny && ( [[ -z $check_allow ]] && touch /etc/cron.allow) || echo "";
       ignore_errors:
         True
 
