@@ -114,6 +114,6 @@
       ignore_errors: true
 
     - name: check kdump
-      shell:
+      shell: |
         check=`systemctl status kdump-tools | grep "Active: active"`; [[ -z $check ]] && apt install linux-crashdump && systemctl enable kdump-tools && systemctl start kdump-tools || echo ""
       ignore_errors: true
