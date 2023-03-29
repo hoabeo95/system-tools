@@ -4,7 +4,6 @@
   hosts: all
   gather_facts: false
   become: yes
-  serial: 1
   tasks:
     - name: Set IPtables
       shell: |
@@ -81,7 +80,7 @@
 
     - name: Set kdump
       shell: |
-        check=`systemctl status kdump | grep "Active: active"`; [[ -z $check ]] && sed -i 's/crashkernel=auto/crashkernel=128M/g' /etc/default/grub && grub2-mkconfig -o /boot/grub2/grub.cfg && systemctl restart kdump || echo ""
+        check=`systemctl status kdump | grep "Active: active"`; [[ -z $check ]] && systemctl enable kdump && systemctl restart kdump || echo ""; sed -i 's/crashkernel=\S*/crashkernel=128M/g' /etc/default/grub && grub2-mkconfig -o /boot/grub2/grub.cfg;
       ignore_errors: true
 
     - name: Set sendmail

@@ -1,3 +1,4 @@
+import pexpect
 import os
 import subprocess
 from traceback import print_tb
@@ -75,6 +76,19 @@ def setup_OS(list_OS):
          playbook = run_playbook
       )
 
+def reboot_OS(list_OS):
+# Define inventory
+   inventory_dir = './inventory'
+# Set the option for the runner
+   for os in list_OS:
+      run_playbook = CURRENT_DIR + f'/playbook/reboot.yaml'
+      run_inventory = CURRENT_DIR + f'/inventory/{os}_family_inventory.ini'
+      check_list = ansible_runner.run(
+         private_data_dir = inventory_dir,
+         inventory = run_inventory,
+         playbook = run_playbook
+      )
+
 def highlight(x):
    color = ['darkgreen','darkorange','darkred','darkblue','black']
    bg_color = ['honeydew','antiquewhite','mistyrose','lightsteelblue','white']
@@ -125,8 +139,8 @@ if __name__ == '__main__':
    choice = 0
    print('Loading...')
    list_OS, list_ssh_fail = create_inventory()
-   while choice != 3:
-      print('Please choice what to do next\n1. Check_list\n2. Setup\n3. End!')
+   while choice != 4:
+      print('Please choice what to do next\n1. Check_list\n2. Setup\n3. Reboot after config\n4. End!')
       choice = int(input('Choice: '))
       if int(choice) not in range(0,4):
          print('Try again!')
@@ -135,6 +149,8 @@ if __name__ == '__main__':
          generate_result(list_OS,list_ssh_fail)
       elif int(choice) == 2:
          setup_OS(list_OS)
+      elif int(choice) == 3:
+         reboot_OS(list_OS)
 # Remove unexpected result
    subprocess.run(['rm', '-rf', 'inventory'])
    print('Done!')

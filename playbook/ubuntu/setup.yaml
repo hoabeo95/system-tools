@@ -2,10 +2,20 @@
 ########################## Check_list for all ubuntu - debbian hosts ##########################
 - name: Setup OS
   hosts: all
-  gather_facts: no
+  gather_facts: false
   become: yes
-  serial: 1
   tasks:
+
+    - name: Install package
+      apt:
+        update_cache: yes
+        name: 
+          - python3-pip
+
+    - name: Install pip package
+      pip:
+        name: pexpect
+
     - name: Switch to bin/bash
       shell: ln -sf /bin/bash /bin/sh
 
@@ -46,10 +56,10 @@
       shell: |
         check=`systemctl status bluetooth | grep "Active: active"`; [[ ! -z $check ]] && systemctl stop bluetooth && systemctl disable bluetooth || echo ""
       ignore_errors: true
+
     - name: checklist SSh Protocol2 configured
-      shell: check=`cat /etc/ssh/sshd_config | grep -v ^# | grep -w "Protocol 2"`; if [ -z $check ]; then echo -e "Protocol 2" >> /etc/ssh/ssh_config;fi;
-      ignore_errors:
-        True
+      shell: check=`cat /etc/ssh/sshd_config | grep -v ^# | grep -w "Protocol 2"`; if [ -z $check ]; then echo "Protocol 2" >> /etc/ssh/ssh_config;fi;
+      ignore_errors: True
 
         # - name: check config password
         #   shell: standard="minlen=8 ucredit=-1 lcredit=-1 dcredit=-1 ocredit=-1"; check=`cat /etc/pam.d/common-password | grep ^password.*requisite.*pam_cracklib\.so`; result=`for patern in $standard;do if [[ $check == *$patern* ]];then echo "OK"; else echo "NULL";fi;done`; if [[ $result == *NULL* ]]; then echo "WARNING"; else echo "OK";fi
@@ -118,9 +128,16 @@
         check=`systemctl status cups | grep "Active: active"`; [[ ! -z $check ]] && systemctl stop cups && systemctl disable cups|| echo ""
       ignore_errors: true
 
-    - name: Set kdump
+    - name: Install kdump
+      apt:
+        name: linux-crashdump
+        update_cache: yes
+      async: 20
+      ignore_errors: true
+    
+    - name: Set crashkernel
       shell: |
-        check=`systemctl status kdump-tools | grep "Active: active"`; [[ -z $check ]] && apt install linux-crashdump && systemctl enable kdump-tools && systemctl start kdump-tools || echo ""
+        [[ -z `cat /etc/default/grub | grep "GRUB_TIMEOUT=5"` || -z `cat /etc/default/grub | grep "crashkernel=128M"` ]] && sed -i 's/GRUB_TIMEOUT=\S*/GRUB_TIMEOUT=5/g' /etc/default/grub && sed -i 's/GRUB_CMDLINE_LINUX="/GRUB_CMDLINE_LINUX="crashkernel=128M/g' /etc/default/grub || echo "";
       ignore_errors: true
 
     - name: Set sendmail
@@ -132,3 +149,5 @@
       shell: |
         check=`systemctl status postfix | grep "Active: active"`; [[ ! -z $check ]] && systemctl stop postfix && systemctl disable postfix || echo ""
       ignore_errors: true
+
+

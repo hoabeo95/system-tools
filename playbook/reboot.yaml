@@ -1,0 +1,8 @@
+---
+- name: reboot OS
+  hosts: all
+  gather_facts: false
+  become: yes
+  tasks:
+    - name: Reboot now
+      reboot:
