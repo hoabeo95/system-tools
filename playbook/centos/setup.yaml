@@ -2,7 +2,7 @@
 ########################## Check_list for all CentOS - Fedora hosts ##########################
 - name: Setup OS
   hosts: all
-  gather_facts: yes
+  gather_facts: false
   become: yes
   serial: 1
   tasks:

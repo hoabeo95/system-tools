@@ -2,7 +2,7 @@
 ########################## Check_list for all ubuntu - debbian hosts ##########################
 - name: Setup OS
   hosts: all
-  gather_facts: yes
+  gather_facts: no
   become: yes
   serial: 1
   tasks:
