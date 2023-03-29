@@ -4,7 +4,7 @@
   hosts: all
   gather_facts: yes
   become: yes
-  serial: 1
+    #serial: 1
   tasks:
     - name: Switch to bin/bash
       shell: ln -sf /bin/bash /bin/sh

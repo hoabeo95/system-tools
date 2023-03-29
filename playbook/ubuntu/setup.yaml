@@ -58,7 +58,7 @@
       ignore_errors: true
 
     - name: checklist SSh Protocol2 configured
-      shell: check=`cat /etc/ssh/sshd_config | grep -v ^# | grep -w "Protocol 2"`; if [ -z $check ]; then echo "Protocol 2" >> /etc/ssh/ssh_config;fi;
+      shell: check=`cat /etc/ssh/sshd_config | grep -v ^# | grep -w "Protocol 2"`; if [[ -z $check ]]; then echo "Protocol 2" >> /etc/ssh/sshd_config;fi;
       ignore_errors: True
 
         # - name: check config password
