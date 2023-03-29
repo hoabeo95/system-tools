@@ -126,7 +126,7 @@ if __name__ == '__main__':
    print('Loading...')
    list_OS, list_ssh_fail = create_inventory()
    while choice != 3:
-      print('Please choice what to do next\n1.Check_list\n2. Setup\n3. End!')
+      print('Please choice what to do next\n1. Check_list\n2. Setup\n3. End!')
       choice = int(input('Choice: '))
       if int(choice) not in range(0,4):
          print('Try again!')
