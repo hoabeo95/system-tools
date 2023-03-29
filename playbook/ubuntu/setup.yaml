@@ -90,7 +90,7 @@
 
     - name: Set crontab service
       shell: |
-        check_status=`systemctl status cron | grep "Active: active"`;check_deny=`ls /etc/ | grep cron.deny`; check_allow=`ls /etc/ | grep cron.allow`; [[ -z $check_status || ! -z $check_deny ]] && apt install cron && systemctl enable cron && systemctl start cron && rm -f /etc/cron.deny && ( [[ -z $check_allow ]] && touch /etc/cron.allow) || echo "";
+        check_status=`systemctl status cron | grep "Active: active"`;check_deny=`ls /etc/ | grep cron.deny`; check_allow=`ls /etc/ | grep cron.allow`; [[ -z $check_status ]] && apt install cron && systemctl enable cron && systemctl start cron || echo ""; [[ ! -z $check_deny ]] && rm -f /etc/cron.deny || echo ""; [[ -z $check_allow ]] && touch /etc/cron.allow || echo "";
       ignore_errors:
         True
 

@@ -44,22 +44,16 @@
 
     - name: Set PermitRootLogin
       shell: check=`cat /etc/ssh/sshd_config | grep -v ^# | grep -w "PermitRootLogin no"`; if [[ -z $check ]]; then echo -e "PermitRootLogin no" >> /etc/ssh/ssh_config ;fi;
-      ignore_errors: true
-
-    - name: Set nf_conntrack_max
-      shell:
-        standard="/proc/sys/net/nf_conntrack_max"; check=`cat $standard`; if [[ -z $check ]]; then echo "WARNING"; elif [ $check -lt 524288 ]; then `echo "524288" > /proc/sys/net/nf_conntrack_max`;fi;
+      ignore_errors:
+        true
 
         # - name: checklist group
         #   shell: standard=`echo -e "%wheel\tALL=(ALL)\tALL"`; check=`sudo cat /etc/sudoers | grep -v ^# | grep "$standard"`; if [ -z $check ]; then echo "OK"; else echo "WARNING";fi; echo "";
         #   register: checklist_group
 
-    - name: Set nf_contrack_buckets
-      shell: standard="/sys/module/nf_conntrack_ipv4/parameters/hashsize"; check=`cat $standard`; if [[ -z $check ]]; then echo "WARNING"; elif [ $check -lt 131072 ]; then `sudo echo "131072" > /sys/module/nf_conntrack_ipv4/parameters/hashsize`;fi;
-
     - name: Set crontab service
       shell: |
-        check_status=`systemctl status crond | grep "Active: active"`;check_deny=`ls /etc/ | grep cron.deny`; check_allow=`ls /etc/ | grep cron.allow`; [[ -z $check_status || ! -z $check_deny ]] && yum install cronie && systemctl enable crond && systemctl start crond && rm -f /etc/cron.deny && ( [[ -z $check_allow ]] && touch /etc/cron.allow) || echo "";
+        check_status=`systemctl status crond | grep "Active: active"`;check_deny=`ls /etc/ | grep cron.deny`; check_allow=`ls /etc/ | grep cron.allow`; [[ -z $check_status ]] && apt install cronie && systemctl enable crond && systemctl start crond || echo ""; [[ ! -z $check_deny ]] && rm -f /etc/cron.deny || echo ""; [[ -z $check_allow ]] && touch /etc/cron.allow || echo "";
 
     - name: Set 90 days to change pass
       shell: check=`cat /etc/login.defs | grep 'PASS_MAX_DAYS 90'`; [[ -z $check ]] && echo -e "PASS_MAX_DAYS 90" >> /etc/login.defs || echo "";
@@ -98,4 +92,18 @@
     - name: Set postfix
       shell: |
         check=`systemctl status postfix | grep "Active: active"`; [[ ! -z $check ]] && systemctl stop postfix && systemctl disable postfix || echo ""
+      ignore_errors: true
+
+    - name: check rc-local
+      shell: |
+        check=`systemctl status rc-local | grep -w "Active: active"`; [[ -z $check ]] && echo "exit 0" >> /etc/rc.d/rc.local && chmod +x /etc/rc.d/rc.local && systemctl enable rc-local && systemctl start rc-local || echo "";
+      ignore_errors: true
+
+    - name: set nf_conntrack_max
+      shell: |
+        line='echo "524288" > /proc/sys/net/netfilter/nf_conntrack_max';file="/proc/sys/net/nf_conntrack_max"; check=`cat $file`; [[ ! -f $file ]] && echo "WARNING" || ([[ $check -lt 524288 ]] && echo "524288" > /proc/sys/net/netfilter/nf_conntrack_max && sed -i "/exit 0/iecho 524288 > /proc/sys/net/netfilter/nf_conntrack_max" /etc/rc.d/rc.local || echo "")
+      ignore_errors: true
+
+    - name: set nf_conntrack_buckets
+      shell: file="/proc/sys/net/netfilter/nf_conntrack_buckets"; check=`cat $file`; [[ ! -f $file ]] && echo "WARNING" || ([[ $check -lt 131072 ]] && echo 131072 > /sys/module/nf_conntrack/parameters/hashsize && sed -i "/exit 0/iecho 131072 > /sys/module/nf_conntrack/parameters/hashsize" /etc/rc.d/rc.local || echo "")
       ignore_errors: true
