@@ -105,4 +105,11 @@
 
     - name: set nf_conntrack_buckets
       shell: file="/proc/sys/net/netfilter/nf_conntrack_buckets"; check=`cat $file`; [[ ! -f $file ]] && echo "WARNING" || ([[ $check -lt 131072 ]] && echo 131072 > /sys/module/nf_conntrack/parameters/hashsize && sed -i "/exit 0/iecho 131072 > /sys/module/nf_conntrack/parameters/hashsize" /etc/rc.d/rc.local || echo "")
-      ignore_errors: true
+      ignore_errors:
+        true
+
+        # - name: check virtual brigde
+        #   shell: check=`ifconfig -a | grep "virbr"`; [[ -z $check ]] && echo "OK" || echo "WARNING";
+        #   register: check_virbr
+        #   ignore_errors:
+        #     true

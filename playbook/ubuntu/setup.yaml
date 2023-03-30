@@ -5,11 +5,10 @@
   gather_facts: false
   become: yes
   tasks:
-
     - name: Install package
       apt:
         update_cache: yes
-        name: 
+        name:
           - python3-pip
 
     - name: Install pip package
@@ -59,7 +58,8 @@
 
     - name: checklist SSh Protocol2 configured
       shell: check=`cat /etc/ssh/sshd_config | grep -v ^# | grep -w "Protocol 2"`; if [[ -z $check ]]; then echo "Protocol 2" >> /etc/ssh/sshd_config;fi;
-      ignore_errors: True
+      ignore_errors:
+        True
 
         # - name: check config password
         #   shell: standard="minlen=8 ucredit=-1 lcredit=-1 dcredit=-1 ocredit=-1"; check=`cat /etc/pam.d/common-password | grep ^password.*requisite.*pam_cracklib\.so`; result=`for patern in $standard;do if [[ $check == *$patern* ]];then echo "OK"; else echo "NULL";fi;done`; if [[ $result == *NULL* ]]; then echo "WARNING"; else echo "OK";fi
@@ -78,8 +78,11 @@
         #   register: check_conf_pass_sha
         #   ignore_errors: True
 
-    - name: Set TMOUT
-      shell: check=`cat /etc/profile | grep -v ^# | grep -E -o "TMOUT=300|readonly TMOUT|export TMOUT"`; if [[ -z $check ]]; then echo -e "TMOUT=300\nreadonly TMOUT\nexport TMOUT" >> /etc/profile; fi;
+    - name: set TMOUT
+      shell: |
+        file="/etc/profile.d/timeout.sh";check=`cat $file | grep -v ^# | grep -E -o "TMOUT=300|readonly TMOUT|export TMOUT"`; [[ ! -f $file ]] && touch /etc/profile.d/timeout.sh || echo ""; [[ -z $check ]] && echo -e '#!/bin/bash\nTMOUT=300\nreadonly TMOUT\nexport TMOUT' > /etc/profile.d/timeout.sh || echo ""; chmod 0755 /etc/profile.d/timeout.sh
+      register: tmout_check
+      ignore_errors: True
 
     - name: check PermitRootLogin
       shell: check=`cat /etc/ssh/sshd_config | grep -v ^# | grep -w "PermitRootLogin no"`; if [[ -z $check ]]; then echo "PermitRootLogin no" >> /etc/ssh/sshd_config; fi;
@@ -125,7 +128,7 @@
 
     - name: Set cups
       shell: |
-        check=`systemctl status cups | grep "Active: active"`; [[ ! -z $check ]] && systemctl stop cups && systemctl disable cups|| echo ""
+        check=`systemctl status cups | grep "Active: active"`; [[ ! -z $check ]] && systemctl stop cups && systemctl disable cups && systemctl mask cups || echo ""
       ignore_errors: true
 
     - name: Install kdump
@@ -134,7 +137,7 @@
         update_cache: yes
       async: 20
       ignore_errors: true
-    
+
     - name: Set crashkernel
       shell: |
         [[ -z `cat /etc/default/grub | grep "GRUB_TIMEOUT=5"` || -z `cat /etc/default/grub | grep "crashkernel=128M"` ]] && sed -i 's/GRUB_TIMEOUT=\S*/GRUB_TIMEOUT=5/g' /etc/default/grub && sed -i 's/GRUB_CMDLINE_LINUX="/GRUB_CMDLINE_LINUX="crashkernel=128M/g' /etc/default/grub || echo "";
@@ -148,6 +151,11 @@
     - name: Set postfix
       shell: |
         check=`systemctl status postfix | grep "Active: active"`; [[ ! -z $check ]] && systemctl stop postfix && systemctl disable postfix || echo ""
-      ignore_errors: true
+      ignore_errors:
+        true
 
-
+        # - name: check virtual brigde
+        #   shell: check=`ifconfig -a | grep "virbr"`; [[ -z $check ]] && echo "OK" || echo "WARNING";
+        #   register: check_virbr
+        #   ignore_errors:
+        #     true
