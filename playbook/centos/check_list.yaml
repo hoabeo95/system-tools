@@ -47,7 +47,7 @@
       ignore_errors: True
 
     - name: check TMOUT
-      shell: check=`cat /etc/profile | grep -v ^# | grep -E "TMOUT=300|readonly TMOUT|export TMOUT"`; if [[ -z $check ]]; then echo "WARNING"; else echo "OK";fi;
+      shell: check=`cat /etc/profile | grep -v ^# | grep -E "TMOUT=300|readonly TMOUT|export TMOUT"`; if [[ -z $check ]]; then echo "WVMwareARNING"; else echo "OK";fi;
       register: tmout_check
 
     - name: check PermitRootLogin
@@ -126,18 +126,37 @@
     - name: check virtual brigde
       shell: check=`ifconfig -a | grep "virbr"`; [[ -z $check ]] && echo "OK" || echo "WARNING";
       register: check_virbr
+      ignore_errors: true
+
+    - name: check openssl version
+      shell: |
+        array=("1.0.1e" "1.0.2k" "1.0.1u" "1.0.2j" "1.1.0a" "1.1.0g" "1.0.2n"); variable="WARNING"; for i in "${array[@]}"; do check=`openssl version -a | grep "$i"`; if [[ ! -z $check ]]; then echo "OK"; variable="OK"; break; fi; done; if [[ $variable == WARNING ]]; then echo "$variable";fi;
+      register: check_version_openssl
+      ignore_errors: True
+
+    - name: check PATH
+      shell: |
+        check=`echo $PATH | grep "\./\|::\|/tmp"`; if [[ -z $check ]]; then echo "OK"; else echo "WARNING";fi;
+      register: check_path
+      ignore_errors: True
+
+    - name: check multipath
+      shell: |
+        list=`dmsetup status| grep -vw linear |awk -F: '{print $1}'| grep -v p[0-9]$| grep -v No`; [[ -z $list ]] && echo "OK" || (check2=`for line in $list; do path=`multipath -ll $line | grep running$| wc -l`; if [[ $path -lt 4 ]] && echo "WARNING" || echo "OK"; done;` [[ $check2 == *WARNING* ]] && echo "WARNING" || echo "OK";)
+      register: check_multipath
       ignore_errors:
-        true
+        True
+
         ########################## Save_result ##########################
 - name: Save result
   hosts: all
   tasks:
     - copy:
         content: |
-          HOST;OS;CHECK_LISTS_USER;IPTABLES;APP_USING_ROOT;TIMEZONE;SSH_PROTOCOL2;CHECK_CONF_PASSWORD;90_DAYS_CHANGE_PASS;CHECK_TMOUT;PERMIT_ROOT_LOGIN;CHECK_ALLOW_USERS;GROUP_SUDO_WHEEL;CHECK_NF_CONNTRACK_MAX;CHECK_CONNTRACK_BUCKETS;CHECK_CRONTAB;CHECK_CRONTAB_MAX_CONF;CHECK_NETWORK_MANAGER;BLUETOOTH;CUPS;CHECK_KDUMP;CHECK_SENDMAIL;CHECK_POSTFIX;RC_LOCAL_CHECK;CHECK_VIRBR
+          HOST;OS;CHECK_LISTS_USER;IPTABLES;APP_USING_ROOT;TIMEZONE;SSH_PROTOCOL2;CHECK_CONF_PASSWORD;90_DAYS_CHANGE_PASS;CHECK_TMOUT;PERMIT_ROOT_LOGIN;CHECK_ALLOW_USERS;GROUP_SUDO_WHEEL;CHECK_NF_CONNTRACK_MAX;CHECK_CONNTRACK_BUCKETS;CHECK_CRONTAB;CHECK_CRONTAB_MAX_CONF;CHECK_NETWORK_MANAGER;BLUETOOTH;CUPS;CHECK_KDUMP;CHECK_SENDMAIL;CHECK_POSTFIX;RC_LOCAL_CHECK;CHECK_VIRBR;CHECK_VERSION_OPENSSL;CHECK_DANGER_PATH
           {% for host in hostvars %}
           {%    set vars = hostvars[host|string] %}
-          {{ vars.inventory_hostname }};{{ vars.sys_os.stdout }};{{ vars.check_list_user.stdout }};{{ vars.iptables.stdout }};{{ vars.app_using_root.stdout }};{{ vars.timezone.stdout }};{{ vars.ssh_protocol2.stdout }};{{ vars.check_conf_pass.stdout }};{{ check_90day_change_pass.stdout }};{{ vars.tmout_check.stdout }};{{ vars.permit_root_login.stdout }};{{ vars.check_allow_users.stdout }};{{ vars.checklist_group.stdout }};{{ vars.check_conntrack_max.stdout }};{{ vars.check_conntrack_buckets.stdout }};{{ vars.check_crontab.stdout }};{{ vars.check_crontab_max_conf.stdout }};{{ vars.check_network_manager.stdout }};{{ vars.check_bluetooth.stdout }};{{ vars.check_cups.stdout }};{{ vars.check_kdump.stdout }};{{ vars.check_sendmail.stdout }};{{ vars.check_postfix.stdout }};{{ vars.rc_local_check.stdout }};{{ vars.check_virbr.stdout }}
+          {{ vars.inventory_hostname }};{{ vars.sys_os.stdout }};{{ vars.check_list_user.stdout }};{{ vars.iptables.stdout }};{{ vars.app_using_root.stdout }};{{ vars.timezone.stdout }};{{ vars.ssh_protocol2.stdout }};{{ vars.check_conf_pass.stdout }};{{ check_90day_change_pass.stdout }};{{ vars.tmout_check.stdout }};{{ vars.permit_root_login.stdout }};{{ vars.check_allow_users.stdout }};{{ vars.checklist_group.stdout }};{{ vars.check_conntrack_max.stdout }};{{ vars.check_conntrack_buckets.stdout }};{{ vars.check_crontab.stdout }};{{ vars.check_crontab_max_conf.stdout }};{{ vars.check_network_manager.stdout }};{{ vars.check_bluetooth.stdout }};{{ vars.check_cups.stdout }};{{ vars.check_kdump.stdout }};{{ vars.check_sendmail.stdout }};{{ vars.check_postfix.stdout }};{{ vars.rc_local_check.stdout }};{{ vars.check_virbr.stdout }};{{ vars.check_version_openssl.stdout }};{{ vars.check_path.stdout }}
           {% endfor %}
         dest:
           ../../output_centos_family.csv
