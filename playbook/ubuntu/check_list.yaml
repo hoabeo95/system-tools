@@ -7,11 +7,6 @@
     yes
     #serial: 1
   tasks:
-    - name: install check system type
-      apt:
-        update_cache: yes
-        name: dmidecode
-
     - name: Switch to bin/bash
       shell: ln -sf /bin/bash /bin/sh
 
@@ -172,8 +167,52 @@
 
     - name: check multipath
       shell: |
-        [[ ! -z `dmidecode -t system | grep "Product" | grep -iE "vmware|openstack"` ]] && echo "OK" || (list=`dmsetup status| grep -vw linear |awk -F: '{print $1}'| grep -v p[0-9]$| grep -v No`; [[ -z $list ]] && echo "OK" || (check="OK";for line in $list; do path=`multipath -ll $line | grep running$| wc -l`; [[ $path -lt 4 ]] && check="WARNING"; break; done; echo "$check"))
+        [[ ! -z `dmidecode -t system | grep "Product" | grep -i "vmware\|openstack"` ]] && echo "OK" || (list=`dmsetup status| grep -vw linear |awk -F: '{print $1}'| grep -v p[0-9]$| grep -v No`; [[ -z $list ]] && echo "OK" || (check="OK";for line in $list; do path=`multipath -ll $line | grep running$| wc -l`; [[ $path -lt 4 ]] && check="WARNING"; break; done; echo "$check"))
       register: check_multipath
+      ignore_errors: True
+
+    - name: check swappiness
+      shell: check=`cat /proc/sys/vm/swappiness`; [[ -z $check || $check -gt 10 ]] && echo "WARNING" || echo "OK";
+      register: check_swappiness
+      ignore_errors: True
+
+    - name: check basic package
+      shell: |
+        array="telnet sysstat lsof dmidecode net-tools pciutils iptables iptables-persistent ntp ftp nmap iotop wget zip unzip sysfsutils traceroute e2fsprogs"; check="OK"; for i in $array; do installed=`dpkg --get-selections | grep ^$i`; [[ -z $installed ]] && check="WARNING";break;done; echo "$check";
+      register: check_basic_pack
+      ignore_errors: True
+
+    - name: check haveged
+      shell: |
+        [[ ! -z `dmidecode -t system | grep "Product" | grep -i "vmware\|openstack"` ]] && echo "OK" || (check=`systemctl status haveged | grep -w "Active: active"`; [[ -z $check ]] && echo "WARNING" || echo "OK")
+      register: check_haveged
+      ignore_errors: True
+
+    - name: check repo connect
+      shell: |
+        repo_check=`curl --connect-timeout 3 -s -o /dev/null -I -w "%{http_code}" 10.60.129.132`; [[ $repo_check != 200 ]] && echo "WARNING" || echo "OK";
+      register: check_repo_connect
+      ignore_errors: True
+
+    - name: check memory swap
+      shell: check=`cat /proc/swaps | tail -n+2`; [[ -z $check ]] && echo "WARNING" || echo "OK";
+      register: check_memory_swap
+      ignore_errors: True
+
+    - name: check mysql active
+      shell: check=`ps -ef | grep mysql | grep -v ^root`; [[ -z $check ]] && echo "OK" || echo "WARNING"
+      register: check_mysql
+      ignore_errors: True
+
+    - name: check bandwidth
+      shell: |
+        list=`ip a | grep "state UP" | awk '{print $2}'| awk -F: '{print $1}'`; check="OK";for i in $list; do speed=`ethtool "$i" | grep "Speed" | awk '{print $2}'| awk -FM '{print $1}'`; [[ $speed -lt 1000 ]] && check="WARNING"; break; done; echo "$check";
+      register: check_bandwidth
+      ignore_errors: True
+
+    - name: check file nouser
+      shell: check=``find / -xdev \( -nouser -o -nogroup \) -print`; [[ -z $check ]] && echo "OK" || echo "WARNING";
+      register: check_file_nouser
       ignore_errors:
         True
         ########################## Save_result ##########################
@@ -182,10 +221,10 @@
   tasks:
     - copy:
         content: |
-          HOST;OS;CHECK_KERNEL_NEWEST;NOT_NECESSARY_PACKAGE;CHECK_LISTS_USER;IPTABLES;NETFILTER;APP_USING_ROOT;TIMEZONE;SSH_PROTOCOL2;CHECK_CONF_PASSWORD;CHECK_CONF_PASSWORD_SHA512;90_DAYS_CHANGE_PASS;CHECK_TMOUT;PERMIT_ROOT_LOGIN;CHECK_ALLOW_USERS;GROUP_SUDO_WHEEL;CHECK_NF_CONNTRACK_MAX;CHECK_CONNTRACK_BUCKETS;CHECK_CRONTAB;CHECK_CRONTAB_MAX_CONF;RC_LOCAL_CHECK;BLUETOOTH;CUPS;CHECK_KDUMP;CHECK_SENDMAIL;CHECK_POSTFIX;CHECK_VIRBR;CHECK_VERSION_OPENSSL;CHECK_DANGER_PATH;CHECK_MULTIPATH
+          HOST;OS;CHECK_KERNEL_NEWEST;CHECK_BASIC_PACKAGE;NOT_NECESSARY_PACKAGE;CHECK_LISTS_USER;IPTABLES;NETFILTER;APP_USING_ROOT;TIMEZONE;SSH_PROTOCOL2;CHECK_CONF_PASSWORD;CHECK_CONF_PASSWORD_SHA512;90_DAYS_CHANGE_PASS;CHECK_TMOUT;PERMIT_ROOT_LOGIN;CHECK_ALLOW_USERS;GROUP_SUDO_WHEEL;CHECK_NF_CONNTRACK_MAX;CHECK_CONNTRACK_BUCKETS;CHECK_CRONTAB;CHECK_CRONTAB_MAX_CONF;RC_LOCAL_CHECK;BLUETOOTH;CUPS;CHECK_KDUMP;CHECK_SENDMAIL;CHECK_POSTFIX;CHECK_VIRBR;CHECK_VERSION_OPENSSL;CHECK_DANGER_PATH;CHECK_MULTIPATH;CHECK_SWAPPINESS;CHECK_HAVEGED;CHECK_REPO_CONNECT;CHECK_MEMORY_SWAP;CHECK_MYSQL;CHECK_BANDWIDTH; CHECK_FILE_NOUSER
           {% for host in hostvars %}
           {%    set vars = hostvars[host|string] %}
-          {{ vars.inventory_hostname }};{{ vars.sys_os.stdout }};{{ vars.check_kernel_newest.stdout }};{{ vars.not_necessary_package.stdout }};{{ vars.check_list_user.stdout }};{{ vars.iptables.stdout }};{{ vars.netfilter_check.stdout }};{{ vars.app_using_root.stdout }};{{ vars.timezone.stdout }};{{ vars.ssh_protocol2.stdout }};{{ vars.check_conf_pass.stdout }};{{ vars.check_conf_pass_sha.stdout }};{{ vars.check_90day_change_pass.stdout }};{{ vars.tmout_check.stdout }};{{ vars.permit_root_login.stdout }};{{ vars.check_allow_users.stdout }};{{ vars.checklist_group.stdout }};{{ vars.check_conntrack_max.stdout }};{{ vars.check_conntrack_buckets.stdout }};{{ vars.check_crontab.stdout }};{{ vars.check_crontab_max_conf.stdout }};{{ vars.rc_local_check.stdout }};{{ vars.check_bluetooth.stdout }};{{ vars.check_cups.stdout }};{{ vars.check_kdump.stdout }};{{ vars.check_sendmail.stdout }};{{ vars.check_postfix.stdout }};{{ vars.check_virbr.stdout }};{{ vars.check_version_openssl.stdout }};{{ vars.check_path.stdout }};{{ vars.check_multipath.stdout }}
+          {{ vars.inventory_hostname }};{{ vars.sys_os.stdout }};{{ vars.check_kernel_newest.stdout }};{{ vars.check_basic_pack.stdout }};{{ vars.not_necessary_package.stdout }};{{ vars.check_list_user.stdout }};{{ vars.iptables.stdout }};{{ vars.netfilter_check.stdout }};{{ vars.app_using_root.stdout }};{{ vars.timezone.stdout }};{{ vars.ssh_protocol2.stdout }};{{ vars.check_conf_pass.stdout }};{{ vars.check_conf_pass_sha.stdout }};{{ vars.check_90day_change_pass.stdout }};{{ vars.tmout_check.stdout }};{{ vars.permit_root_login.stdout }};{{ vars.check_allow_users.stdout }};{{ vars.checklist_group.stdout }};{{ vars.check_conntrack_max.stdout }};{{ vars.check_conntrack_buckets.stdout }};{{ vars.check_crontab.stdout }};{{ vars.check_crontab_max_conf.stdout }};{{ vars.rc_local_check.stdout }};{{ vars.check_bluetooth.stdout }};{{ vars.check_cups.stdout }};{{ vars.check_kdump.stdout }};{{ vars.check_sendmail.stdout }};{{ vars.check_postfix.stdout }};{{ vars.check_virbr.stdout }};{{ vars.check_version_openssl.stdout }};{{ vars.check_path.stdout }};{{ vars.check_multipath.stdout }};{{ vars.check_swappiness.stdout }};{{ vars.check_haveged.stdout }};{{ vars.check_repo_connect.stdout }};{{ vars.check_memory_swap.stdout }};{{ vars.check_mysql.stdout }};{{ vars.check_bandwidth.stdout }};{{ vars.check_file_nouser.stdout }}
           {% endfor %}
         dest:
           ../../output_ubuntu_family.csv
