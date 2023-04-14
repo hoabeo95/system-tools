@@ -7,6 +7,16 @@
     yes
     #serial: 1
   tasks:
+    - name: install check system type
+      apt:
+        name: dmidecode
+
+    - name: Check system type
+      shell: |
+        dmidecode -t system | grep "Product" | awk -F: '{print $2}'
+      register: check_sys_type
+      ignore_errors: True
+
     - name: Switch to bin/bash
       shell: ln -sf /bin/bash /bin/sh
 
