@@ -9,13 +9,8 @@
   tasks:
     - name: install check system type
       apt:
+        update_cache: yes
         name: dmidecode
-
-    - name: Check system type
-      shell: |
-        dmidecode -t system | grep "Product" | awk -F: '{print $2}'
-      register: check_sys_type
-      ignore_errors: True
 
     - name: Switch to bin/bash
       shell: ln -sf /bin/bash /bin/sh
@@ -173,6 +168,12 @@
       shell: |
         check=`echo $PATH | grep "\./\|::\|/tmp"`; if [[ -z $check ]]; then echo "OK"; else echo "WARNING";fi;
       register: check_path
+      ignore_errors: True
+
+    - name: check multipath
+      shell: |
+        [[ ! -z `dmidecode -t system | grep "Product" | grep -iE "vmware|openstack"` ]] && echo "OK" || (list=`dmsetup status| grep -vw linear |awk -F: '{print $1}'| grep -v p[0-9]$| grep -v No`; [[ -z $list ]] && echo "OK" || (check="OK";for line in $list; do path=`multipath -ll $line | grep running$| wc -l`; [[ $path -lt 4 ]] && check="WARNING"; break; done; echo "$check"))
+      register: check_multipath
       ignore_errors:
         True
         ########################## Save_result ##########################
@@ -181,10 +182,10 @@
   tasks:
     - copy:
         content: |
-          HOST;OS;CHECK_KERNEL_NEWEST;NOT_NECESSARY_PACKAGE;CHECK_LISTS_USER;IPTABLES;NETFILTER;APP_USING_ROOT;TIMEZONE;SSH_PROTOCOL2;CHECK_CONF_PASSWORD;CHECK_CONF_PASSWORD_SHA512;90_DAYS_CHANGE_PASS;CHECK_TMOUT;PERMIT_ROOT_LOGIN;CHECK_ALLOW_USERS;GROUP_SUDO_WHEEL;CHECK_NF_CONNTRACK_MAX;CHECK_CONNTRACK_BUCKETS;CHECK_CRONTAB;CHECK_CRONTAB_MAX_CONF;RC_LOCAL_CHECK;BLUETOOTH;CUPS;CHECK_KDUMP;CHECK_SENDMAIL;CHECK_POSTFIX;CHECK_VIRBR;CHECK_VERSION_OPENSSL;CHECK_DANGER_PATH
+          HOST;OS;CHECK_KERNEL_NEWEST;NOT_NECESSARY_PACKAGE;CHECK_LISTS_USER;IPTABLES;NETFILTER;APP_USING_ROOT;TIMEZONE;SSH_PROTOCOL2;CHECK_CONF_PASSWORD;CHECK_CONF_PASSWORD_SHA512;90_DAYS_CHANGE_PASS;CHECK_TMOUT;PERMIT_ROOT_LOGIN;CHECK_ALLOW_USERS;GROUP_SUDO_WHEEL;CHECK_NF_CONNTRACK_MAX;CHECK_CONNTRACK_BUCKETS;CHECK_CRONTAB;CHECK_CRONTAB_MAX_CONF;RC_LOCAL_CHECK;BLUETOOTH;CUPS;CHECK_KDUMP;CHECK_SENDMAIL;CHECK_POSTFIX;CHECK_VIRBR;CHECK_VERSION_OPENSSL;CHECK_DANGER_PATH;CHECK_MULTIPATH
           {% for host in hostvars %}
           {%    set vars = hostvars[host|string] %}
-          {{ vars.inventory_hostname }};{{ vars.sys_os.stdout }};{{ vars.check_kernel_newest.stdout }};{{ vars.not_necessary_package.stdout }};{{ vars.check_list_user.stdout }};{{ vars.iptables.stdout }};{{ vars.netfilter_check.stdout }};{{ vars.app_using_root.stdout }};{{ vars.timezone.stdout }};{{ vars.ssh_protocol2.stdout }};{{ vars.check_conf_pass.stdout }};{{ vars.check_conf_pass_sha.stdout }};{{ vars.check_90day_change_pass.stdout }};{{ vars.tmout_check.stdout }};{{ vars.permit_root_login.stdout }};{{ vars.check_allow_users.stdout }};{{ vars.checklist_group.stdout }};{{ vars.check_conntrack_max.stdout }};{{ vars.check_conntrack_buckets.stdout }};{{ vars.check_crontab.stdout }};{{ vars.check_crontab_max_conf.stdout }};{{ vars.rc_local_check.stdout }};{{ vars.check_bluetooth.stdout }};{{ vars.check_cups.stdout }};{{ vars.check_kdump.stdout }};{{ vars.check_sendmail.stdout }};{{ vars.check_postfix.stdout }};{{ vars.check_virbr.stdout }};{{ vars.check_version_openssl.stdout }};{{ vars.check_path.stdout }}
+          {{ vars.inventory_hostname }};{{ vars.sys_os.stdout }};{{ vars.check_kernel_newest.stdout }};{{ vars.not_necessary_package.stdout }};{{ vars.check_list_user.stdout }};{{ vars.iptables.stdout }};{{ vars.netfilter_check.stdout }};{{ vars.app_using_root.stdout }};{{ vars.timezone.stdout }};{{ vars.ssh_protocol2.stdout }};{{ vars.check_conf_pass.stdout }};{{ vars.check_conf_pass_sha.stdout }};{{ vars.check_90day_change_pass.stdout }};{{ vars.tmout_check.stdout }};{{ vars.permit_root_login.stdout }};{{ vars.check_allow_users.stdout }};{{ vars.checklist_group.stdout }};{{ vars.check_conntrack_max.stdout }};{{ vars.check_conntrack_buckets.stdout }};{{ vars.check_crontab.stdout }};{{ vars.check_crontab_max_conf.stdout }};{{ vars.rc_local_check.stdout }};{{ vars.check_bluetooth.stdout }};{{ vars.check_cups.stdout }};{{ vars.check_kdump.stdout }};{{ vars.check_sendmail.stdout }};{{ vars.check_postfix.stdout }};{{ vars.check_virbr.stdout }};{{ vars.check_version_openssl.stdout }};{{ vars.check_path.stdout }};{{ vars.check_multipath.stdout }}
           {% endfor %}
         dest:
           ../../output_ubuntu_family.csv
