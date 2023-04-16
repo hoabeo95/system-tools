@@ -91,7 +91,7 @@
       register: check_conntrack_max
 
     - name: checklist group
-      shell: standard=`echo -e "%sudo\tALL=(ALL:ALL) ALL"`; check=`sudo cat /etc/sudoers | grep -v ^# | grep "$standard"`; if [ -z $check ]; then echo "OK"; else echo "WARNING";fi; echo "";
+      shell: standard=`echo -e "%sudo\tALL=(ALL:ALL) ALL"`; check=`sudo cat /etc/sudoers | grep -v ^# | grep "$standard"`; [[ -z $check ]] && echo "OK" || echo "WARNING";
       register: checklist_group
 
     - name: check nf_contrack_buckets
@@ -211,7 +211,7 @@
       ignore_errors: True
 
     - name: check file nouser
-      shell: check=``find / -xdev \( -nouser -o -nogroup \) -print`; [[ -z $check ]] && echo "OK" || echo "WARNING";
+      shell: check=`find / -xdev \( -nouser -o -nogroup \) -print`; [[ -z $check ]] && echo "OK" || echo "WARNING";
       register: check_file_nouser
       ignore_errors:
         True
@@ -221,7 +221,7 @@
   tasks:
     - copy:
         content: |
-          HOST;OS;CHECK_KERNEL_NEWEST;CHECK_BASIC_PACKAGE;NOT_NECESSARY_PACKAGE;CHECK_LISTS_USER;IPTABLES;NETFILTER;APP_USING_ROOT;TIMEZONE;SSH_PROTOCOL2;CHECK_CONF_PASSWORD;CHECK_CONF_PASSWORD_SHA512;90_DAYS_CHANGE_PASS;CHECK_TMOUT;PERMIT_ROOT_LOGIN;CHECK_ALLOW_USERS;GROUP_SUDO_WHEEL;CHECK_NF_CONNTRACK_MAX;CHECK_CONNTRACK_BUCKETS;CHECK_CRONTAB;CHECK_CRONTAB_MAX_CONF;RC_LOCAL_CHECK;BLUETOOTH;CUPS;CHECK_KDUMP;CHECK_SENDMAIL;CHECK_POSTFIX;CHECK_VIRBR;CHECK_VERSION_OPENSSL;CHECK_DANGER_PATH;CHECK_MULTIPATH;CHECK_SWAPPINESS;CHECK_HAVEGED;CHECK_REPO_CONNECT;CHECK_MEMORY_SWAP;CHECK_MYSQL;CHECK_BANDWIDTH; CHECK_FILE_NOUSER
+          HOST;OS;CHECK_KERNEL_NEWEST;CHECK_BASIC_PACKAGE;NOT_NECESSARY_PACKAGE;CHECK_LISTS_USER;IPTABLES;NETFILTER;APP_USING_ROOT;TIMEZONE;SSH_PROTOCOL2;CHECK_CONF_PASSWORD;CHECK_CONF_PASSWORD_SHA512;90_DAYS_CHANGE_PASS;CHECK_TMOUT;PERMIT_ROOT_LOGIN;CHECK_ALLOW_USERS;GROUP_SUDO_WHEEL;CHECK_NF_CONNTRACK_MAX;CHECK_CONNTRACK_BUCKETS;CHECK_CRONTAB;CHECK_CRONTAB_MAX_CONF;RC_LOCAL_CHECK;BLUETOOTH;CUPS;CHECK_KDUMP;CHECK_SENDMAIL;CHECK_POSTFIX;CHECK_VIRBR;CHECK_VERSION_OPENSSL;CHECK_DANGER_PATH;CHECK_MULTIPATH;CHECK_SWAPPINESS;CHECK_HAVEGED;CHECK_REPO_CONNECT;CHECK_MEMORY_SWAP;CHECK_MYSQL;CHECK_BANDWIDTH;CHECK_FILE_NOUSER
           {% for host in hostvars %}
           {%    set vars = hostvars[host|string] %}
           {{ vars.inventory_hostname }};{{ vars.sys_os.stdout }};{{ vars.check_kernel_newest.stdout }};{{ vars.check_basic_pack.stdout }};{{ vars.not_necessary_package.stdout }};{{ vars.check_list_user.stdout }};{{ vars.iptables.stdout }};{{ vars.netfilter_check.stdout }};{{ vars.app_using_root.stdout }};{{ vars.timezone.stdout }};{{ vars.ssh_protocol2.stdout }};{{ vars.check_conf_pass.stdout }};{{ vars.check_conf_pass_sha.stdout }};{{ vars.check_90day_change_pass.stdout }};{{ vars.tmout_check.stdout }};{{ vars.permit_root_login.stdout }};{{ vars.check_allow_users.stdout }};{{ vars.checklist_group.stdout }};{{ vars.check_conntrack_max.stdout }};{{ vars.check_conntrack_buckets.stdout }};{{ vars.check_crontab.stdout }};{{ vars.check_crontab_max_conf.stdout }};{{ vars.rc_local_check.stdout }};{{ vars.check_bluetooth.stdout }};{{ vars.check_cups.stdout }};{{ vars.check_kdump.stdout }};{{ vars.check_sendmail.stdout }};{{ vars.check_postfix.stdout }};{{ vars.check_virbr.stdout }};{{ vars.check_version_openssl.stdout }};{{ vars.check_path.stdout }};{{ vars.check_multipath.stdout }};{{ vars.check_swappiness.stdout }};{{ vars.check_haveged.stdout }};{{ vars.check_repo_connect.stdout }};{{ vars.check_memory_swap.stdout }};{{ vars.check_mysql.stdout }};{{ vars.check_bandwidth.stdout }};{{ vars.check_file_nouser.stdout }}
