@@ -1,3 +1,14 @@
+python 3.10
+ansible.runner
+subprocess.run
+panda
+paramiko
+
+python 3.10
+sshpass
+python-pip
+ansible
+
 # system-tools
 
 [iptables]

@@ -155,7 +155,7 @@
 
     - name: check openssl version
       shell: |
-        array=("1.0.1e" "1.0.2k" "1.0.1u" "1.0.2j" "1.1.0a" "1.1.0g" "1.0.2n"); variable="WARNING"; for i in "${array[@]}"; do check=`openssl version -a | grep "$i"`; if [[ ! -z $check ]]; then echo "OK"; variable="OK"; break; fi; done; if [[ $variable == WARNING ]]; then echo "$variable";fi;
+        array=("1.0.1e" "1.0.2k" "1.0.1u" "1.0.2j" "1.1.0a" "1.1.0g" "1.0.2n"); variable="WARNING"; for i in "${array[@]}"; do check=`openssl version -a | grep "$i"`; if [[ ! -z $check ]]; then echo "OK"; variable="OK" && break; fi; done; if [[ $variable == WARNING ]]; then echo "$variable";fi;
       register: check_version_openssl
       ignore_errors: True
 
@@ -167,7 +167,7 @@
 
     - name: check multipath
       shell: |
-        [[ ! -z `dmidecode -t system | grep "Product" | grep -i "vmware\|openstack"` ]] && echo "OK" || (list=`dmsetup status| grep -vw linear |awk -F: '{print $1}'| grep -v p[0-9]$| grep -v No`; [[ -z $list ]] && echo "OK" || (check="OK";for line in $list; do path=`multipath -ll $line | grep running$| wc -l`; [[ $path -lt 4 ]] && check="WARNING"; break; done; echo "$check"))
+        [[ ! -z `dmidecode -t system | grep "Product" | grep -i "vmware\|openstack"` ]] && echo "OK" || (list=`dmsetup status| grep -vw linear |awk -F: '{print $1}'| grep -v p[0-9]$| grep -v No`; [[ -z $list ]] && echo "OK" || (check="OK";for line in $list; do path=`multipath -ll $line | grep running$| wc -l`; [[ $path -lt 4 ]] && check="WARNING" && break; done; echo "$check"))
       register: check_multipath
       ignore_errors: True
 
@@ -178,7 +178,7 @@
 
     - name: check basic package
       shell: |
-        array="telnet sysstat lsof dmidecode net-tools pciutils iptables iptables-persistent ntp ftp nmap iotop wget zip unzip sysfsutils traceroute e2fsprogs"; check="OK"; for i in $array; do installed=`dpkg --get-selections | grep ^$i`; [[ -z $installed ]] && check="WARNING";break;done; echo "$check";
+        array="telnet sysstat lsof dmidecode net-tools pciutils iptables iptables-persistent ntp ftp nmap iotop wget zip unzip sysfsutils traceroute e2fsprogs"; check="OK"; for i in $array; do installed=`dpkg --get-selections | grep ^$i`; [[ -z $installed ]] && check="WARNING" && break;done; echo "$check";
       register: check_basic_pack
       ignore_errors: True
 
@@ -206,7 +206,7 @@
 
     - name: check bandwidth
       shell: |
-        list=`ip a | grep "state UP" | awk '{print $2}'| awk -F: '{print $1}'`; check="OK";for i in $list; do speed=`ethtool "$i" | grep "Speed" | awk '{print $2}'| awk -FM '{print $1}'`; [[ $speed -lt 1000 ]] && check="WARNING"; break; done; echo "$check";
+        list=`ip a | grep "state UP" | awk '{print $2}'| awk -F: '{print $1}'`; check="OK";for i in $list; do speed=`ethtool "$i" | grep "Speed" | awk '{print $2}'| awk -FM '{print $1}'`; [[ $speed -lt 1000 ]] && check="WARNING" && break; done; echo "$check";
       register: check_bandwidth
       ignore_errors: True
 
@@ -217,13 +217,13 @@
 
     - name: check max_open_file user
       shell: |
-        list=`cat /etc/passwd |grep "/bin/bash" | grep -v ^# | grep -v nfsnobody | awk -F: '($3>=400) {print $1}'`; check="OK"; for user in $list;do limit_open=`cat /etc/security/limits.conf | grep -v ^# | grep -w $user | grep -v soft | grep -w nofile`; [[ -z $limit_open ]] && check="WARNING"; break; done; echo "$check"
+        list=`cat /etc/passwd |grep "/bin/bash" | grep -v ^# | grep -v nfsnobody | awk -F: '($3>=400) {print $1}'`; check="OK"; for user in $list;do limit_open=`cat /etc/security/limits.conf | grep -v ^# | grep -w $user | grep -v soft | grep -w nofile`; [[ -z $limit_open ]] && check="WARNING" && break; done; echo "$check"
       register: max_open_file_user
       ignore_errors: True
 
     - name: check max_process user
       shell: |
-        list=`cat /etc/passwd |grep "/bin/bash" | grep -v ^# | grep -v nfsnobody | awk -F: '($3>=400) {print $1}'`; check="OK"; for user in $list;do limit_open=`cat /etc/security/limits.conf | grep -v ^# | grep -w $user | grep -v soft | grep -w nproc`; [[ -z $limit_open ]] && check="WARNING"; break; done; echo "$check"
+        list=`cat /etc/passwd |grep "/bin/bash" | grep -v ^# | grep -v nfsnobody | awk -F: '($3>=400) {print $1}'`; check="OK"; for user in $list;do limit_open=`cat /etc/security/limits.conf | grep -v ^# | grep -w $user | grep -v soft | grep -w nproc`; [[ -z $limit_open ]] && check="WARNING" && break; done; echo "$check"
       register: max_process
       ignore_errors: True
 
@@ -235,7 +235,7 @@
 
     - name: check password_expires
       shell: |
-        list=`cat /etc/passwd |grep $sh  | grep -v ^# | grep -v nfsnobody | awk -F: '($3>=400) {print $1}'`; check="OK"; for user in $list;do status=`chage -l $user | grep "Password expires" |  awk '{print $4}'`; [[ $status == "never" ]] && check="WARNING"; break; done; echo "$check"
+        list=`cat /etc/passwd |grep $sh  | grep -v ^# | grep -v nfsnobody | awk -F: '($3>=400) {print $1}'`; check="OK"; for user in $list;do status=`chage -l $user | grep "Password expires" |  awk '{print $4}'`; [[ $status == "never" ]] && check="WARNING" && break; done; echo "$check"
       register: password_expires
       ignore_errors: True
 
@@ -257,6 +257,24 @@
     - name: check zone_reclaim_mode
       shell: check=`cat /proc/sys/vm/zone_reclaim_mode`; [[ $check != 0 ]] && echo "WARNING" || echo "OK";
       register: zone_reclaim_mode
+      ignore_errors: True
+
+    - name: check rsyslog
+      shell: |
+        check=`systemctl status rsyslog | grep -w "Active: active"`; [[ -z $check ]] && echo "WARNING" || echo "OK"
+      register: check_rsyslog_service
+      ignore_errors: True
+
+    - name: check rsyslog 1
+      shell: |
+        array=("/var/log/cron" "/var/log/maillog" "/var/log/messages" "/var/log/secure" "/var/log/spooler" "{" "compress" "sharedscripts" "postrotate" "/bin/kill -HUP \`cat /var/run/syslogd.pid 2> /dev/null\` 2> /dev/null || true"  "endscript" "}"); check="OK"; for i in "${array[@]}"; do status=`cat /etc/logrotate.d/rsyslog | grep -v ^# | grep "$i"`; [[ -z $status ]] && check="WARNING" && break ;done; echo "$check";
+      register: rsyslog_1
+      ignore_errors: True
+
+    - name: check rsyslog_2
+      shell: |
+        array=("weekly" "rotate 12" "create" "dateext" "include /etc/logrotate.d" "/var/log/wtmp {" "monthly" "create 0664 root utmp" "minisize 1M" "rotate 3" "}" "/var/log/btmp {" "missingok" "create 0600 root utmp" "}"); check="OK"; for i in "${array[@]}"; do status=`cat /etc/logrotate.conf | grep -v ^# | grep -w "$i"`; [[ -z $status ]] && check="WARNING" && break; done; echo "$check";
+      register: rsyslog_2
       ignore_errors:
         True
         ########################## Save_result ##########################
@@ -265,10 +283,10 @@
   tasks:
     - copy:
         content: |
-          HOST;OS;CHECK_KERNEL_NEWEST;CHECK_BASIC_PACKAGE;NOT_NECESSARY_PACKAGE;CHECK_LISTS_USER;IPTABLES;NETFILTER;APP_USING_ROOT;TIMEZONE;SSH_PROTOCOL2;CHECK_CONF_PASSWORD;CHECK_CONF_PASSWORD_SHA512;90_DAYS_CHANGE_PASS;CHECK_TMOUT;PERMIT_ROOT_LOGIN;CHECK_ALLOW_USERS;GROUP_SUDO_WHEEL;CHECK_NF_CONNTRACK_MAX;CHECK_CONNTRACK_BUCKETS;CHECK_CRONTAB;CHECK_CRONTAB_MAX_CONF;RC_LOCAL_CHECK;BLUETOOTH;CUPS;CHECK_KDUMP;CHECK_SENDMAIL;CHECK_POSTFIX;CHECK_VIRBR;CHECK_VERSION_OPENSSL;CHECK_DANGER_PATH;CHECK_MULTIPATH;CHECK_SWAPPINESS;CHECK_HAVEGED;CHECK_REPO_CONNECT;CHECK_MEMORY_SWAP;CHECK_MYSQL;CHECK_BANDWIDTH;CHECK_FILE_NOUSER;MAX_OPEN_FILE_USER;MAX_OPEN_FILE_SERVER;MAX_PROCESS;CHECK_PASS_EXPIRES;CHECK_VAR;CHECK_APP;CHECK_SIRC;ZONE_RECLAIM_MODE
+          HOST;OS;CHECK_KERNEL_NEWEST;CHECK_BASIC_PACKAGE;NOT_NECESSARY_PACKAGE;CHECK_LISTS_USER;IPTABLES;NETFILTER;APP_USING_ROOT;TIMEZONE;SSH_PROTOCOL2;CHECK_CONF_PASSWORD;CHECK_CONF_PASSWORD_SHA512;90_DAYS_CHANGE_PASS;CHECK_TMOUT;PERMIT_ROOT_LOGIN;CHECK_ALLOW_USERS;GROUP_SUDO_WHEEL;CHECK_NF_CONNTRACK_MAX;CHECK_CONNTRACK_BUCKETS;CHECK_CRONTAB;CHECK_CRONTAB_MAX_CONF;RC_LOCAL_CHECK;BLUETOOTH;CUPS;CHECK_KDUMP;CHECK_SENDMAIL;CHECK_POSTFIX;CHECK_VIRBR;CHECK_VERSION_OPENSSL;CHECK_DANGER_PATH;CHECK_MULTIPATH;CHECK_SWAPPINESS;CHECK_HAVEGED;CHECK_REPO_CONNECT;CHECK_MEMORY_SWAP;CHECK_MYSQL;CHECK_BANDWIDTH;CHECK_FILE_NOUSER;MAX_OPEN_FILE_USER;MAX_OPEN_FILE_SERVER;MAX_PROCESS;CHECK_PASS_EXPIRES;CHECK_VAR;CHECK_APP;CHECK_SIRC;ZONE_RECLAIM_MODE;CHECK_RSYSLOG_SERVICE;RSYSLOG_1;RSYSLOG_2
           {% for host in hostvars %}
           {%    set vars = hostvars[host|string] %}
-          {{ vars.inventory_hostname }};{{ vars.sys_os.stdout }};{{ vars.check_kernel_newest.stdout }};{{ vars.check_basic_pack.stdout }};{{ vars.not_necessary_package.stdout }};{{ vars.check_list_user.stdout }};{{ vars.iptables.stdout }};{{ vars.netfilter_check.stdout }};{{ vars.app_using_root.stdout }};{{ vars.timezone.stdout }};{{ vars.ssh_protocol2.stdout }};{{ vars.check_conf_pass.stdout }};{{ vars.check_conf_pass_sha.stdout }};{{ vars.check_90day_change_pass.stdout }};{{ vars.tmout_check.stdout }};{{ vars.permit_root_login.stdout }};{{ vars.check_allow_users.stdout }};{{ vars.checklist_group.stdout }};{{ vars.check_conntrack_max.stdout }};{{ vars.check_conntrack_buckets.stdout }};{{ vars.check_crontab.stdout }};{{ vars.check_crontab_max_conf.stdout }};{{ vars.rc_local_check.stdout }};{{ vars.check_bluetooth.stdout }};{{ vars.check_cups.stdout }};{{ vars.check_kdump.stdout }};{{ vars.check_sendmail.stdout }};{{ vars.check_postfix.stdout }};{{ vars.check_virbr.stdout }};{{ vars.check_version_openssl.stdout }};{{ vars.check_path.stdout }};{{ vars.check_multipath.stdout }};{{ vars.check_swappiness.stdout }};{{ vars.check_haveged.stdout }};{{ vars.check_repo_connect.stdout }};{{ vars.check_memory_swap.stdout }};{{ vars.check_mysql.stdout }};{{ vars.check_bandwidth.stdout }};{{ vars.check_file_nouser.stdout }};{{ vars.max_open_file_user.stdout }};{{ vars.max_open_file_server.stdout }};{{ vars.max_process.stdout }};{{ vars.password_expires.stdout }};{{ vars.check_var.stdout }};{{ vars.check_application.stdout }};{{ vars.check_sirc.stdout }};{{ vars.zone_reclaim_mode.stdout }}
+          {{ vars.inventory_hostname }};{{ vars.sys_os.stdout }};{{ vars.check_kernel_newest.stdout }};{{ vars.check_basic_pack.stdout }};{{ vars.not_necessary_package.stdout }};{{ vars.check_list_user.stdout }};{{ vars.iptables.stdout }};{{ vars.netfilter_check.stdout }};{{ vars.app_using_root.stdout }};{{ vars.timezone.stdout }};{{ vars.ssh_protocol2.stdout }};{{ vars.check_conf_pass.stdout }};{{ vars.check_conf_pass_sha.stdout }};{{ vars.check_90day_change_pass.stdout }};{{ vars.tmout_check.stdout }};{{ vars.permit_root_login.stdout }};{{ vars.check_allow_users.stdout }};{{ vars.checklist_group.stdout }};{{ vars.check_conntrack_max.stdout }};{{ vars.check_conntrack_buckets.stdout }};{{ vars.check_crontab.stdout }};{{ vars.check_crontab_max_conf.stdout }};{{ vars.rc_local_check.stdout }};{{ vars.check_bluetooth.stdout }};{{ vars.check_cups.stdout }};{{ vars.check_kdump.stdout }};{{ vars.check_sendmail.stdout }};{{ vars.check_postfix.stdout }};{{ vars.check_virbr.stdout }};{{ vars.check_version_openssl.stdout }};{{ vars.check_path.stdout }};{{ vars.check_multipath.stdout }};{{ vars.check_swappiness.stdout }};{{ vars.check_haveged.stdout }};{{ vars.check_repo_connect.stdout }};{{ vars.check_memory_swap.stdout }};{{ vars.check_mysql.stdout }};{{ vars.check_bandwidth.stdout }};{{ vars.check_file_nouser.stdout }};{{ vars.max_open_file_user.stdout }};{{ vars.max_open_file_server.stdout }};{{ vars.max_process.stdout }};{{ vars.password_expires.stdout }};{{ vars.check_var.stdout }};{{ vars.check_application.stdout }};{{ vars.check_sirc.stdout }};{{ vars.zone_reclaim_mode.stdout }};{{ vars.check_rsyslog_service.stdout }};{{ vars.rsyslog_1.stdout }};{{ vars.rsyslog_2.stdout }}
           {% endfor %}
         dest:
           ../../output_ubuntu_family.csv
