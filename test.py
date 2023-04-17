@@ -1,4 +1,3 @@
-import pexpect
 import os
 import subprocess
 from traceback import print_tb
