@@ -25,7 +25,7 @@
 
     - name: check list user
       shell: |
-        check=`cat /etc/passwd | grep sh$ | awk -F: '{print $1}' | grep -Ev "^root|^user1"`; if [[ -z $check  ]]; then echo "OK";else echo "WARNING"; fi;
+        check=`cat /etc/passwd | grep sh$ | awk -F: '{print $1}' | grep -Ev "^root|^vt_admin"`; if [[ -z $check  ]]; then echo "OK";else echo "WARNING"; fi;
       register: check_list_user
       ignore_errors: True
 
