@@ -254,7 +254,7 @@
 
     - name: check rsyslog_4
       shell: |
-        array=("/var/log/iptables/iptables.log" "{" "daily" "rotate 30" "copytruncate" "compress" "notifempty" "missingok" "}"); check="OK"; for i in "${array[@]}"; do status=`cat /etc/logrotate.d/iptables | grep -v ^# | grep -w "$i"`; if [[ -z $status ]] && check="WARNING" && break ;done; echo "$check";
+        array=("/var/log/iptables/iptables.log" "{" "daily" "rotate 30" "copytruncate" "compress" "notifempty" "missingok" "}"); check="OK"; for i in "${array[@]}"; do status=`cat /etc/logrotate.d/iptables | grep -v ^# | grep -w "$i"`; [[ -z $status ]] && check="WARNING" && break ;done; echo "$check";
       register: rsyslog_4
       ignore_errors: True
 
@@ -278,7 +278,7 @@
 
     - name: check rsyslog_8
       shell: |
-        check=`cat /etc/rsyslog.conf | grep -v ^# | grep "local6" | grep "/var/log/cmdlog.log" | [[ $check == 1 ]] && echo "OK" || echo "WARNING"
+        check=`cat /etc/rsyslog.conf | grep -v ^# | grep "local6" | grep "/var/log/cmdlog.log" | wc -l`; [[ $check == 1 ]] && echo "OK" || echo "WARNING"
       register: rsyslog_8
       ignore_errors: True
 
