@@ -244,6 +244,48 @@
       shell: |
         array=("weekly" "rotate 12" "create" "dateext" "include /etc/logrotate.d" "/var/log/wtmp {"  "create 0664 root utmp" "}" "/var/log/btmp {" "create 0600 root utmp" "}"); check="OK"; for i in "${array[@]}"; do status=`cat /etc/logrotate.conf | grep -v ^# | grep -w "$i"`; [[ -z $status ]] && check="WARNING" && break; done; echo "$check";
       register: rsyslog_2
+      ignore_errors: True
+
+    - name: check rsyslog_3
+      shell: |
+        array=("/var/log/cmdlog.log" "{" "compress" "weekly" "rotate 12" "sharedscripts" "postrotate" "/bin/kill -HUP \`cat /var/run/syslogd.pid 2> /dev/null\` 2> /dev/null || true" "endscript" "}"); check="OK";for i in "${array[@]}"; do status=`cat /etc/logrotate.d/cmdlog | grep -v ^# | grep -w "$i"`; [[ -z $status ]] && check="WARNING" && break;done; echo "$check";
+      register: rsyslog_3
+      ignore_errors: True
+
+    - name: check rsyslog_4
+      shell: |
+        array=("/var/log/iptables/iptables.log" "{" "daily" "rotate 30" "copytruncate" "compress" "notifempty" "missingok" "}"); check="OK"; for i in "${array[@]}"; do status=`cat /etc/logrotate.d/iptables | grep -v ^# | grep -w "$i"`; if [[ -z $status ]] && check="WARNING" && break ;done; echo "$check";
+      register: rsyslog_4
+      ignore_errors: True
+
+    - name: check rsyslog_5
+      shell: |
+        i="export PROMPT_COMMAND"; check=`cat /etc/bashrc | grep -v ^# | grep -w "$i"`; [[ -z $check ]] && echo "OK" || echo "WARNING"
+      register: rsyslog_5
+      ignore_errors: True
+
+    - name: check rsyslog_6
+      shell: |
+        array=("/var/log/cmdlog.log" "/var/log/iptables/iptables.log"); check="OK"; for i in "${array[@]}"; do status=`cat /etc/rsyslog.conf | grep -v ^# | grep -w "$i"`; [[ -z $status ]] && check="WARNING" && break ;done; echo "$check"
+      register: rsyslog_6
+      ignore_errors: True
+
+    - name: check rsyslog_7
+      shell: |
+        check=`cat /etc/bashrc | grep -v ^# | grep "export PROMPT_COMMAND" | grep "local6.debug" | wc -l`; [[ $check == 1 ]] && echo "OK" || echo "WARNING"
+      register: rsyslog_7
+      ignore_errors: True
+
+    - name: check rsyslog_8
+      shell: |
+        check=`cat /etc/rsyslog.conf | grep -v ^# | grep "local6" | grep "/var/log/cmdlog.log" | [[ $check == 1 ]] && echo "OK" || echo "WARNING"
+      register: rsyslog_8
+      ignore_errors: True
+
+    - name: Check rsyslog_9
+      shell: |
+        check=`cat /etc/rsyslog.conf | grep -v ^# | grep "kern.debug" | grep "/var/log/iptables/iptables.log" | wc -l`; [[ $check == 1 ]] && echo "OK" || echo "WARNING"
+      register: rsyslog_9
       ignore_errors:
         True
 
@@ -253,10 +295,12 @@
   tasks:
     - copy:
         content: |
-          HOST;OS;CHECK_LISTS_USER;CHECK_BASIC_PACKAGE;IPTABLES;APP_USING_ROOT;TIMEZONE;SSH_PROTOCOL2;CHECK_CONF_PASSWORD;90_DAYS_CHANGE_PASS;CHECK_TMOUT;PERMIT_ROOT_LOGIN;CHECK_ALLOW_USERS;GROUP_SUDO_WHEEL;CHECK_NF_CONNTRACK_MAX;CHECK_CONNTRACK_BUCKETS;CHECK_CRONTAB;CHECK_CRONTAB_MAX_CONF;CHECK_NETWORK_MANAGER;BLUETOOTH;CUPS;CHECK_KDUMP;CHECK_SENDMAIL;CHECK_POSTFIX;RC_LOCAL_CHECK;CHECK_VIRBR;CHECK_VERSION_OPENSSL;CHECK_DANGER_PATH;CHECK_MULTIPATH;CHECK_SWAPPINESS;CHECK_HAVEGED;CHECK_REPO_CONNECT;CHECK_MEMORY_SWAP;CHECK_MYSQL;CHECK_BANDWIDTH;CHECK_FILE_NOUSER;MAX_OPEN_FILE_USER;MAX_OPEN_FILE_SERVER;MAX_PROCESS;CHECK_PASS_EXPIRES;CHECK_VAR_DIRECTORY;CHECK_APP_DIRECTORY;CHECK_SIRC;ZONE_RECLAIM_MODE;RSYSLOG_1;RSYSLOG_2
+          HOST;OS;CHECK_LISTS_USER;CHECK_BASIC_PACKAGE;IPTABLES;APP_USING_ROOT;TIMEZONE;SSH_PROTOCOL2;CHECK_CONF_PASSWORD;90_DAYS_CHANGE_PASS;CHECK_TMOUT;PERMIT_ROOT_LOGIN;CHECK_ALLOW_USERS;GROUP_SUDO_WHEEL;CHECK_NF_CONNTRACK_MAX;CHECK_CONNTRACK_BUCKETS;CHECK_CRONTAB;CHECK_CRONTAB_MAX_CONF;CHECK_NETWORK_MANAGER;BLUETOOTH;CUPS;CHECK_KDUMP;CHECK_SENDMAIL;CHECK_POSTFIX;RC_LOCAL_CHECK;CHECK_VIRBR;CHECK_VERSION_OPENSSL;CHECK_DANGER_PATH;CHECK_MULTIPATH;CHECK_SWAPPINESS;CHECK_HAVEGED;CHECK_REPO_CONNECT;CHECK_MEMORY_SWAP;CHECK_MYSQL;CHECK_BANDWIDTH;CHECK_FILE_NOUSER;MAX_OPEN_FILE_USER;MAX_OPEN_FILE_SERVER;MAX_PROCESS;CHECK_PASS_EXPIRES;CHECK_VAR_DIRECTORY;CHECK_APP_DIRECTORY;CHECK_SIRC;ZONE_RECLAIM_MODE;RSYSLOG_1;RSYSLOG_2;RSYSLOG_3;RSYSLOG_4;RSYSLOG_5;RSYSLOG_6;RSYSLOG_7;RSYSLOG_8;RSYSLOG_9
+
           {% for host in hostvars %}
           {%    set vars = hostvars[host|string] %}
-          {{ vars.inventory_hostname }};{{ vars.sys_os.stdout }};{{ vars.check_list_user.stdout }};{{ vars.check_basic_pack.stdout }};{{ vars.iptables.stdout }};{{ vars.app_using_root.stdout }};{{ vars.timezone.stdout }};{{ vars.ssh_protocol2.stdout }};{{ vars.check_conf_pass.stdout }};{{ check_90day_change_pass.stdout }};{{ vars.tmout_check.stdout }};{{ vars.permit_root_login.stdout }};{{ vars.check_allow_users.stdout }};{{ vars.checklist_group.stdout }};{{ vars.check_conntrack_max.stdout }};{{ vars.check_conntrack_buckets.stdout }};{{ vars.check_crontab.stdout }};{{ vars.check_crontab_max_conf.stdout }};{{ vars.check_network_manager.stdout }};{{ vars.check_bluetooth.stdout }};{{ vars.check_cups.stdout }};{{ vars.check_kdump.stdout }};{{ vars.check_sendmail.stdout }};{{ vars.check_postfix.stdout }};{{ vars.rc_local_check.stdout }};{{ vars.check_virbr.stdout }};{{ vars.check_version_openssl.stdout }};{{ vars.check_path.stdout }};{{ vars.check_multipath.stdout }};{{ vars.check_swappiness.stdout }};{{ vars.check_haveged.stdout }};{{ vars.check_repo_connect.stdout }};{{ vars.check_memory_swap.stdout }};{{ vars.check_mysql.stdout }};{{ vars.check_bandwidth.stdout }};{{ vars.check_file_nouser.stdout }};{{ vars.max_open_file_user.stdout }};{{ vars.max_open_file_server.stdout }};{{ vars.max_process.stdout }};{{ vars.password_expires.stdout }};{{ vars.check_var_dir.stdout }};{{ vars.check_application_dir.stdout }};{{ vars.check_sirc.stdout }};{{ vars.zone_reclaim_mode.stdout }};{{ vars.rsyslog_1.stdout }};{{ vars.rsyslog_2.stdout }}
+          {{ vars.inventory_hostname }};{{ vars.sys_os.stdout }};{{ vars.check_list_user.stdout }};{{ vars.check_basic_pack.stdout }};{{ vars.iptables.stdout }};{{ vars.app_using_root.stdout }};{{ vars.timezone.stdout }};{{ vars.ssh_protocol2.stdout }};{{ vars.check_conf_pass.stdout }};{{ check_90day_change_pass.stdout }};{{ vars.tmout_check.stdout }};{{ vars.permit_root_login.stdout }};{{ vars.check_allow_users.stdout }};{{ vars.checklist_group.stdout }};{{ vars.check_conntrack_max.stdout }};{{ vars.check_conntrack_buckets.stdout }};{{ vars.check_crontab.stdout }};{{ vars.check_crontab_max_conf.stdout }};{{ vars.check_network_manager.stdout }};{{ vars.check_bluetooth.stdout }};{{ vars.check_cups.stdout }};{{ vars.check_kdump.stdout }};{{ vars.check_sendmail.stdout }};{{ vars.check_postfix.stdout }};{{ vars.rc_local_check.stdout }};{{ vars.check_virbr.stdout }};{{ vars.check_version_openssl.stdout }};{{ vars.check_path.stdout }};{{ vars.check_multipath.stdout }};{{ vars.check_swappiness.stdout }};{{ vars.check_haveged.stdout }};{{ vars.check_repo_connect.stdout }};{{ vars.check_memory_swap.stdout }};{{ vars.check_mysql.stdout }};{{ vars.check_bandwidth.stdout }};{{ vars.check_file_nouser.stdout }};{{ vars.max_open_file_user.stdout }};{{ vars.max_open_file_server.stdout }};{{ vars.max_process.stdout }};{{ vars.password_expires.stdout }};{{ vars.check_var_dir.stdout }};{{ vars.check_application_dir.stdout }};{{ vars.check_sirc.stdout }};{{ vars.zone_reclaim_mode.stdout }};{{ vars.rsyslog_1.stdout }};{{ vars.rsyslog_2.stdout }};{{ vars.rsyslog_3.stdout }};{{ vars.rsyslog_4.stdout }};{{ vars.rsyslog_5.stdout }};{{ vars.rsyslog_6.stdout }};{{ vars.rsyslog_7.stdout }};{{ vars.rsyslog_8.stdout }};{{ vars.rsyslog_9.stdout }}
+
           {% endfor %}
         dest:
           ../../output_centos_family.csv

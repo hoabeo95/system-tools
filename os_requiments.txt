@@ -1,0 +1,4 @@
+python==3.10.6
+python-pip
+sshpass==1.09
+ansible==2.14.2

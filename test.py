@@ -140,17 +140,18 @@ if __name__ == '__main__':
    print('Loading...')
    list_OS, list_ssh_fail = create_inventory()
    while choice != 4:
-      print('Please choice what to do next\n1. Check_list\n2. Setup\n3. Reboot after config\n4. End!')
+    #  print('Please choice what to do next\n1. Check_list\n2. Setup\n3. Reboot after config\n4. End!')
+      print('Please choice what to do next\n1. Check_list\n4. End!')
       choice = int(input('Choice: '))
       if int(choice) not in range(0,4):
          print('Try again!')
       elif int(choice) == 1:
          check_list_OS(list_OS)
          generate_result(list_OS,list_ssh_fail)
-      elif int(choice) == 2:
-         setup_OS(list_OS)
-      elif int(choice) == 3:
-         reboot_OS(list_OS)
+    #  elif int(choice) == 2:
+    #     setup_OS(list_OS)
+    #  elif int(choice) == 3:
+    #     reboot_OS(list_OS)
 # Remove unexpected result
    subprocess.run(['rm', '-rf', 'inventory'])
    print('Done!')

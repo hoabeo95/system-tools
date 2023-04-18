@@ -1,0 +1,5 @@
+paramiko==2.9.3
+openpyxl==3.1.1
+pandas==1.5.3
+subprocess.run==0.0.8
+ansible-runner==2.3.2
