@@ -148,10 +148,10 @@ if __name__ == '__main__':
       elif int(choice) == 1:
          check_list_OS(list_OS)
          generate_result(list_OS,list_ssh_fail)
-    #  elif int(choice) == 2:
-    #     setup_OS(list_OS)
-    #  elif int(choice) == 3:
-    #     reboot_OS(list_OS)
+      elif int(choice) == 2:
+         setup_OS(list_OS)
+      elif int(choice) == 3:
+         reboot_OS(list_OS)
 # Remove unexpected result
    subprocess.run(['rm', '-rf', 'inventory'])
    print('Done!')
