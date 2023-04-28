@@ -115,7 +115,7 @@ def generate_result(list_OS, list_ssh_fail):
    writer = pd.ExcelWriter('result.xlsx')
 
 # Create a total result column
-   # Create sheet Ubuntu in result
+   # Create sheet result
    for os in list_OS:
       index = []
       df = f'df_{os}'
