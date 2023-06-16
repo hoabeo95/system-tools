@@ -25,7 +25,6 @@ def create_inventory():
       host_ip = df_input.loc[row,'ip']
       username = df_input.loc[row,'user']
       user_pass = df_input.loc[row,'user_pass']
-      root_pass = df_input.loc[row,'root_pass']
 # SSH connect
       ssh = paramiko.SSHClient()
       ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -36,7 +35,7 @@ def create_inventory():
          print(f'{host_ip} OK!')
          host_os = ssh_stdout.readline().rstrip().lower()
          inventory = open(f'./inventory/{host_os}_family_inventory.ini','a')
-         inventory.write(f"{host_ip} ansible_user={username} ansible_password={user_pass} ansible_sudo_pass={root_pass}\n")
+         inventory.write(f"{host_ip} ansible_user={username} ansible_password={user_pass} ansible_sudo_pass={user_pass}\n")
          inventory.close()
          if host_os not in list_OS:
             list_OS.append(host_os)
